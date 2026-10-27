@@ -1,0 +1,4 @@
+.DS_Store
+# Le fichier d'espace de travail se génère (workspace-worktrees), et ses chemins sont ceux d'une
+# machine.
+*.code-workspace
