@@ -16,6 +16,8 @@ depots_code:
 
 tags_liens:
   - carte_trello
+  # Un cadrage cite la piste qu'il réalise (RG-piste-etat-deduit) ; sa demande de fusion la ferme.
+  - piste
   - issue_github
   - pull_request
   - maquette

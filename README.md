@@ -31,6 +31,10 @@ Le référentiel décrit l'état courant du produit ; les cadrages le transforme
 
 Les règles de gestion naissent des cadrages : leur texte n'est écrit dans `rules/` qu'à la livraison de l'un d'eux.
 
+## Feuille de route
+
+La feuille de route se tient en **pistes** : des issues de ce dépôt étiquetées `piste`, rattachées par `domaine/<id>` et `fonctionnalite/<id>`, et rangées dans un jalon par phase, de 0 à 5. Une piste n'entre jamais dans le référentiel : le cadrage qui la réalise la cite, et sa livraison la ferme.
+
 ## Licence
 
 [MIT](LICENSE).
