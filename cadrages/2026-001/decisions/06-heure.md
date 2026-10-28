@@ -23,8 +23,8 @@ Une horloge DS3231 sauvegardée par pile CR2032, resynchronisée en NTP quand le
 **Retenue.** L'heure demandée à un serveur NTP, par le Wi-Fi de l'ESP32, sans module d'horloge.
 
 **Pour** — aucun composant de plus ; l'heure est juste dès que le réseau est là.
-**Contre** — après une coupure sans réseau, le régulateur ignore l'heure : l'éclairage reste alors coupé (à valider) jusqu'au retour du réseau, et le critère « à l'heure même sans réseau » de O3 tombe.
+**Contre** — après une coupure sans réseau, le régulateur ne connaît que la dernière heure enregistrée : il en repart et l'heure estimée retarde de la durée de la coupure, jusqu'au retour du réseau. Le critère « à l'heure même sans réseau » de O3 tombe.
 
 ## Décision
 
-NTP seul. Ce qui a tranché : l'utilisateur a écarté l'horloge RTC ; l'heure ne sert qu'à l'éclairage et à la ventilation, si bien que la régulation du chauffage et les protections restent indépendantes du réseau (NF1 intacte).
+NTP seul. Ce qui a tranché : l'utilisateur a écarté l'horloge RTC ; l'heure ne sert qu'à l'éclairage et à la ventilation, si bien que la régulation du chauffage et les protections restent indépendantes du réseau (NF1 intacte). Sans réseau, l'éclairage suit une heure estimée à partir de la dernière heure connue, enregistrée en mémoire non volatile : l'utilisateur l'a préféré à un éclairage coupé jusqu'au retour du réseau.

@@ -59,7 +59,7 @@ Ce cadrage est le premier du référentiel : aucune règle, aucune décision, au
 2. Je consulte les mesures et l'état des sorties depuis la page web locale ou depuis mon téléphone, et je change une consigne ou un horaire sans toucher au boîtier.
 3. En novembre, je passe le régulateur en `HIBERNATION` : la lumière, la brumisation et la ventilation s'arrêtent, le chauffage ne protège plus que du gel.
 4. Pour nettoyer le bac ou changer le substrat, je passe en `MAINTENANCE` : tout est coupé, les mesures continuent.
-5. Une coupure de courant survient : au retour, le régulateur repart sorties coupées, retrouve ses réglages et reprend la régulation du chauffage — avec ou sans Wi-Fi. L'éclairage attend que l'heure soit revenue par le réseau.
+5. Une coupure de courant survient : au retour, le régulateur repart sorties coupées, retrouve ses réglages et le mode dans lequel il tournait, et reprend la régulation du chauffage — avec ou sans Wi-Fi. Sans réseau, l'éclairage suit une heure estimée, corrigée dès que le réseau rend l'heure.
 6. Quand ça se passe mal — un capteur se tait, le Wi-Fi tombe, le firmware se bloque, le relais de chauffage reste collé —, chauffage et pompe se coupent ou le limiteur matériel coupe à leur place, et mon téléphone reçoit une alerte dès que le réseau le permet.
 
 ## Exigences
@@ -75,7 +75,7 @@ Ce cadrage est le premier du référentiel : aucune règle, aucune décision, au
 - **F7** Exposer une page web locale : mesures, état des sorties, mode, réglages.
 - **F8** Publier l'état en MQTT et accepter des commandes (consignes, mode, forçage manuel temporaire).
 - **F9** Envoyer des alertes : température hors 15-24 °C, humidité hors 60-95 %, capteur muet, redémarrage inattendu.
-- **F10** Aérer le bac par un ventilateur, par cycles horaires en mode `ACTIF` (par exemple 5 min par heure, valeurs à valider).
+- **F10** Aérer le bac par un ventilateur : 5 min par heure en mode `ACTIF`, une aération de 5 min par jour en mode `HIBERNATION`.
 
 ### Non fonctionnelles
 
@@ -83,7 +83,7 @@ Ce cadrage est le premier du référentiel : aucune règle, aucune décision, au
 - **NF2 Sécurité intrinsèque** : un limiteur matériel coupe le chauffage au-delà de 24 °C, indépendamment du firmware.
 - **NF3 Fail-safe logiciel** : capteur en défaut → chauffage et brumisation coupés, alerte émise.
 - **NF4 Persistance** : réglages stockés en mémoire non volatile (NVS), conservés après coupure.
-- **NF5 Heure** : l'heure vient du NTP, par le Wi-Fi de l'ESP32, sans module d'horloge. Sans heure valide, l'éclairage reste coupé (à valider) ; seuls l'éclairage et les cycles de ventilation dépendent de l'heure.
+- **NF5 Heure** : l'heure vient du NTP, par le Wi-Fi de l'ESP32, sans module d'horloge. Sans réseau au démarrage, le régulateur estime l'heure à partir de la dernière heure connue, enregistrée en mémoire non volatile. Seuls l'éclairage et les cycles de ventilation dépendent de l'heure.
 - **NF6 Maintenance** : mises à jour du firmware en OTA, watchdog matériel actif.
 
 ## Architecture cible
@@ -182,9 +182,6 @@ La phase 1 est prioritaire : avec un garage à 10-12 °C, le hors-gel et la rég
 - Dépôt public ou privé, et quelle licence ?
 - Quel est le niveau de déclenchement du module de relais (actif haut ou actif bas) ? Il se vérifie et se consigne avant tout raccordement, et décide du niveau des sorties au repos.
 - La pompe consomme-t-elle 0,5 ou 1 A ?
-- Quel cycle d'aération retenir en `ACTIF` — 5 min par heure est une proposition ?
-- Le ventilateur reste-t-il coupé en `HIBERNATION` et en `MAINTENANCE`, comme proposé ?
-- Sans heure valide, l'éclairage reste-t-il coupé, comme proposé ?
 
 ## Énoncés
 
@@ -230,11 +227,11 @@ En mode `ACTIF`, l'éclairage est allumé pendant une plage horaire quotidienne 
 
 ### RG-heure-ntp
 
-L'heure qui règle l'éclairage et les cycles de ventilation vient du NTP, par le Wi-Fi. Tant que le régulateur n'a pas d'heure valide — après un démarrage sans réseau —, l'éclairage reste coupé (à valider). Le chauffage, le hors-gel et les protections ne dépendent jamais de l'heure. Ce que la règle protège : une heure inconnue n'allume pas la lumière au milieu de la nuit, et ne prive pas le bac de chauffage.
+L'heure qui règle l'éclairage et les cycles de ventilation vient du NTP, par le Wi-Fi. Le régulateur enregistre régulièrement la dernière heure connue en mémoire non volatile. Après un démarrage sans réseau, il repart de cette heure enregistrée et la fait avancer : l'heure estimée retarde de la durée de la coupure, et l'éclairage suit cette heure estimée jusqu'à ce que le NTP la corrige. Sans aucune heure enregistrée, au tout premier démarrage, l'éclairage reste coupé. Le chauffage, le hors-gel et les protections ne dépendent jamais de l'heure. Ce que la règle protège : après une coupure sans réseau, les escargots gardent un cycle jour-nuit, à peu près à l'heure ; et une heure inconnue ne prive jamais le bac de chauffage.
 
 ### RG-ventilation-periodique
 
-En mode `ACTIF`, le ventilateur aère le bac par cycles horaires : il tourne une durée fixe chaque heure — par exemple 5 minutes par heure, valeurs à valider. Il est commandé par une voie du module de relais. Ce que la règle protège : l'air confiné et saturé du bac se renouvelle, sans le dessécher.
+En mode `ACTIF`, le ventilateur tourne 5 minutes par heure. En mode `HIBERNATION`, il tourne 5 minutes une fois par jour. En mode `MAINTENANCE`, il reste coupé. Il est commandé par une voie du module de relais. Ce que la règle protège : l'air confiné et saturé du bac se renouvelle, sans le dessécher — y compris pendant les mois d'hibernation.
 
 ### RG-sorties-par-mode
 
@@ -242,9 +239,9 @@ Le régulateur a trois modes, et chacun dit ce que chaque sortie peut faire :
 
 | Mode | Chauffage | Brumisation | Éclairage | Ventilation | Usage |
 | --- | --- | --- | --- | --- | --- |
-| `ACTIF` | Consigne (défaut 19 °C) | Seuil (défaut 75 % HR) | Selon horaire | Cycles horaires | Printemps-été, ou hiver chauffé |
-| `HIBERNATION` | Hors-gel : marche sous 4 °C, arrêt à 6 °C | Coupée | Coupé | Coupée (à valider) | Novembre à février |
-| `MAINTENANCE` | Coupé | Coupée | Coupé | Coupée (à valider) | Nettoyage, changement de substrat |
+| `ACTIF` | Consigne (défaut 19 °C) | Seuil (défaut 75 % HR) | Selon horaire | 5 min par heure | Printemps-été, ou hiver chauffé |
+| `HIBERNATION` | Hors-gel : marche sous 4 °C, arrêt à 6 °C | Coupée | Coupé | 5 min une fois par jour | Novembre à février |
+| `MAINTENANCE` | Coupé | Coupée | Coupé | Coupée | Nettoyage, changement de substrat |
 
 Les mesures continuent dans tous les modes. Ce que la règle protège : en hibernation, les escargots restent au frais et au sec dans l'obscurité, sans geler ; en maintenance, rien ne s'allume pendant qu'on a les mains dans le bac.
 
@@ -254,7 +251,7 @@ On passe d'un mode à l'autre seulement par une commande explicite — page web 
 
 ### RG-reglages-persistants
 
-Le mode, les consignes, les seuils et les horaires sont stockés en mémoire non volatile et retrouvés après une coupure de courant.
+Le mode, les consignes, les seuils, les horaires et la dernière heure connue sont stockés en mémoire non volatile et retrouvés après une coupure de courant. Au démarrage, le régulateur reprend le mode enregistré ; s'il n'en trouve aucun de valide — premier démarrage, mémoire effacée ou corrompue —, il démarre en `MAINTENANCE`, tout coupé, jusqu'à ce qu'on choisisse un mode. Ce que la règle protège : une coupure de courant ne fait pas sortir l'élevage de son mode, et un régulateur qui ne sait pas où il en est ne chauffe pas au hasard.
 
 ### RG-regulation-sans-reseau
 
@@ -266,7 +263,7 @@ La régulation tourne entièrement sur le régulateur. L'absence du Wi-Fi, du br
 
 ### RG-capteur-en-defaut
 
-Un capteur d'air muet ou qui rend une valeur aberrante pendant plus de 2 minutes est en défaut : chauffage et pompe sont coupés, et une alerte est émise. Ils ne reprennent que lorsque le capteur rend de nouveau des mesures valides. Ce que la règle protège : le régulateur ne chauffe ni ne brumise à l'aveugle.
+Un capteur d'air muet ou qui rend une valeur aberrante pendant plus de 2 minutes est en défaut : chauffage et pompe sont coupés, et une alerte est émise. Pendant ces 2 minutes, aucune décision nouvelle n'est prise sur une mesure invalide : les sorties gardent l'état décidé sur la dernière mesure valide, et la durée maximale de chauffe continue s'applique toujours. Une erreur passagère ne coupe donc rien. Ils ne reprennent que lorsque le capteur rend de nouveau des mesures valides. Ce que la règle protège : le régulateur ne chauffe ni ne brumise à l'aveugle.
 
 ### RG-impulsion-de-brumisation-bornee
 
