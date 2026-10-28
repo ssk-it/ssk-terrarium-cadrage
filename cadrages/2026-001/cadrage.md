@@ -99,8 +99,8 @@ flowchart LR
 
     subgraph Boitier["Boîtier de commande"]
         ESP["ESP32<br/>firmware ssk-terrarium"]
-        REL["Module 6 relais 5 V optocouplé<br/>chauffage · LED · pompe · ventilateur"]
-        BUCK["Abaisseur LM2596<br/>12 V → 5 V"]
+        REL["Module 4 relais 5 V optocouplé<br/>chauffage · LED · pompe · ventilateur"]
+        BUCK["Abaisseur LM2596<br/>12 V → 5 V (bobines, ventilateur)"]
     end
 
     ALIM["Bloc Mean Well 12 V 3 A"]
@@ -110,8 +110,9 @@ flowchart LR
 
     SHT -- I²C --> ESP
     DS -- 1-Wire --> ESP
-    ALIM --> BUCK --> ESP
-    ESP --> REL
+    ALIM -- 12 V, jack --> ESP
+    ALIM --> BUCK -- 5 V JD-VCC --> REL
+    ESP -- 3,3 V VCC + commandes --> REL
     REL -- 230 V --> LIM --> CAB
     REL -- 12 V --> LED
     REL -- 12 V --> POMPE --> BUSE
@@ -130,15 +131,18 @@ Tout ce qui est en trait plein fonctionne sans réseau. Les traits pointillés s
 
 | # | Composant | Référence indicative | Fournisseur | Qté | Prix indicatif |
 | --- | --- | --- | --- | --- | --- |
-| 1 | Microcontrôleur | Carte ESP32-WROOM-32 Keyestudio | Kubii | 1 | 14,40 € |
-| 2 | Capteur T° / HR air | Adafruit Sensirion SHT45 avec filtre PTFE, STEMMA QT, n° 6174 ([fiche](https://www.adafruit.com/product/6174)), I²C 0x44, 3,3 / 5 V | Adafruit | 1 | ≈ 15 € (13,50 $ US) |
+| 1 | Microcontrôleur | Carte ESP32-WROOM-32 Keyestudio KS5016 (format Uno, USB-C CH340C, jack VIN 7-12 V avec abaisseur 5 V 2 A intégré) — alimentée directement par le bloc 12 V | Kubii | 1 | 14,40 € |
+| 2 | Capteur T° / HR air | Adafruit Sensirion SHT45 avec filtre PTFE, STEMMA QT, n° 6174 ([fiche](https://www.adafruit.com/product/6174)), I²C 0x44, 3,3 / 5 V. La membrane ne protège que le capteur : vernir la carte (vernis de tropicalisation) en épargnant le capteur, et la placer à l'écart de la buse. Revendeurs UE : Kiwi Electronics, The Pi Hut (variante « with PTFE ») | Adafruit | 1 | ≈ 15 € (13,50 $ US) |
 | 3 | Sonde T° substrat | DS18B20 étanche DFRobot | Kubii | 1 | 9,95 € |
-| 4 | Commande des sorties | Module 6 relais 5 V optocouplé — voies : chauffage, LED, pompe, ventilateur ; 2 voies libres | Kubii | 1 | 8,70 € |
+| 4 | Commande des sorties | Module 4 relais 5 V optocouplé **à cavalier JD-VCC séparable**, contacts 10 A 250 V AC — par exemple ELEGOO 4 canaux (déclenchement bas, ASIN B06XK6HCQC). Voies : chauffage, LED, pompe, ventilateur. Celui de Kubii est écarté : en rupture, et sa fiche ne dit ni le niveau de déclenchement ni la présence de JD-VCC | hors Kubii | 1 | ≈ 8-12 € |
 | 5 | Ventilation | Ventilateur 80 × 80 mm 5 V | Kubii | 1 | 7,96 € |
-| 6 | Résistances | Pack de résistances (4,7 kΩ pour le 1-Wire, 10 kΩ) | Kubii | 1 | 9,95 € |
-| 7 | Conversion 12 V → 5 V | Abaisseur LM2596 | Kubii | 1 | 2,95 € |
+| 6 | LED d'état | LED 3 mm + résistance 330 Ω sur GPIO 2 : la KS5016 n'a pas de LED sur cette broche. Le 4,7 kΩ du 1-Wire est sur la carte adaptatrice du kit DS18B20 (à vérifier à réception) ; le 10 kΩ du MOSFET n'a plus lieu d'être | à choisir | 1 | < 1 € |
+| 7 | Conversion 12 V → 5 V | Abaisseur LM2596 réglable à afficheur, **réglé à 5,0 V avant tout branchement** — alimente les bobines (JD-VCC) et le ventilateur, à l'écart de la carte | Kubii | 1 | 2,95 € |
 | 8 | Alimentation | Mean Well GST36E12-P1J, 12 V 3 A 36 W, jack 5,5 × 2,1 centre +, −30 … +70 °C — stock à vérifier (alimentatorishop, RS, TME, Farnell) | à choisir | 1 | 15-20 € HT |
-| 9 | Raccord d'alimentation | Embase jack femelle 5,5 × 2,1 à bornier | à choisir | 1 | — |
+| 9 | Raccord d'alimentation | Embase jack femelle 5,5 × 2,1 à bornier, et un cordon jack mâle 5,5 × 2,1 vers la carte | à choisir | 1 | — |
+| 16 | Câble du capteur air | Câble STEMMA QT / Qwiic (JST SH 4 broches) vers fils ou connecteurs femelles, ≈ 40 cm à 1 m — non fourni avec le SHT45 | à choisir | 1 | ≈ 1-3 € |
+| 17 | Câblage 230 V | Cordon secteur 3G 1 mm² avec fiche, porte-fusible 5 × 20 et fusible 1 A temporisé, socle de prise femelle pour brancher le limiteur, borniers à levier | à choisir | 1 lot | ≈ 10-15 € |
+| 18 | Petit câblage | Diode 1N5819 ou 1N4007 aux bornes de la pompe (si non fournie), rallonge pour la fiche Molex 1,25 mm du ventilateur, fils Dupont, fil souple 12 V, câble USB-C pour programmer | à choisir | 1 lot | ≈ 5-10 € |
 | 10 | Éclairage | Ruban LED blanc 12 V, 4,8 W/m, IP54, sécable tous les 5 cm, 3000-4000 K, ≈ 90 cm, collé sous la vitre du couvercle, à l'extérieur si possible | lampe-eclairage-led.com | ≈ 1 m | ≈ 2,90 €/m |
 | 11 | Brumisation | Pompe membrane 12 V, avec sa diode de roue libre, + 1 à 2 buses + tuyau 4 mm + réservoir 2-5 L | à choisir | 1 lot | 25-40 € |
 | 12 | Boîtier | Boîtier électrique IP65, borniers, presse-étoupes, fusible 230 V | à choisir | 1 | 15-20 € |
@@ -146,18 +150,23 @@ Tout ce qui est en trait plein fonctionne sans réseau. Les traits pointillés s
 | 14 | Limiteur de sécurité | Thermostat Exo Terra 300 W Dimming & Pulse, réglé à 24 °C — non négociable | à choisir | 1 | 65 € |
 | 15 | Isolation | Polystyrène extrudé 2-3 cm | à choisir | 1 panneau | 10-20 € |
 
-La commande Kubii (lignes 1 et 3 à 7) revient à environ 88 €. Les prix sont des ordres de grandeur, à vérifier à l'achat.
+La commande Kubii (lignes 1, 3, 5 et 7) revient à environ 35 € ; la référence Kubii du ventilateur est le « Ventilateur 80x80x10.8mm » (5 V, 0,18 A, fiche Molex 1,25 mm, câble de 10 cm). Les prix sont des ordres de grandeur, à vérifier à l'achat.
 
 ### Budget électrique sur le 12 V
 
 | Consommateur | Courant |
 | --- | --- |
 | Ruban LED (≈ 90 cm à 4,8 W/m) | 0,4 A |
-| ESP32, module de relais et ventilateur, par l'abaisseur LM2596 | ≈ 0,4 A |
-| Pompe de brumisation | 0,5-1 A, à vérifier |
-| **Total** | **≈ 1,3-1,8 A** |
+| Carte ESP32 par son jack (pointes Wi-Fi ≈ 0,5 A sous 3,3 V) | ≈ 0,1-0,25 A |
+| Bobines des 4 relais (≈ 70 mA chacune sous 5 V) et ventilateur (0,18 A sous 5 V), par le LM2596 | ≈ 0,25 A |
+| Pompe de brumisation | 0,5-1 A, à vérifier — en choisir une sous 1,5 A |
+| **Total, tout allumé** | **≈ 1,3-1,9 A** |
 
-Le bloc de 3 A laisse une marge. Le chauffage, seul en 230 V, ne passe que par son relais et le limiteur.
+Le bloc de 3 A laisse une marge, même au démarrage de la pompe. La carte reçoit le 12 V par son jack (VIN 7-12 V, abaisseur 5 V 2 A et régulateur 3,3 V intégrés) ; le LM2596 n'alimente que les bobines et le ventilateur, pour garder leurs à-coups loin de l'ESP32. Le circuit du garage doit être protégé par un différentiel 30 mA, comme tout circuit en local humide.
+
+### Puissance de chauffe
+
+Estimation, à confirmer à l'usage : le bac (≈ 2,3 m² de parois) perd de l'ordre de 7 W par degré d'écart avec le garage, une fois arrière, côtés et fond isolés au polystyrène, la façade et le couvercle restant vitrés. Tenir 19 °C dans un garage à 11 °C demande donc ≈ 55-65 W, ventilation comprise : le câble antigel de 50 W est **juste** en mode `ACTIF` l'hiver. Le hors-gel de l'hibernation (4-6 °C dans un garage à 10-12 °C) ne demande, lui, aucune chauffe. Pour garder de la marge : isoler aussi le couvercle hors de la zone d'éclairage et couvrir la façade la nuit ; si la consigne n'est pas tenue, ajouter un second câble ou passer à un câble plus puissant, toujours derrière le limiteur. Le chauffage, seul en 230 V, ne passe que par son relais et le limiteur.
 
 ## Feuille de route
 
@@ -259,15 +268,15 @@ Un chien de garde matériel redémarre le régulateur si sa boucle principale se
 
 Une broche que l'ESP32 ne pilote pas — reset, boot, plantage — laisse chaque relais du module ouvert. Pour le garantir :
 
-- le niveau de déclenchement du module (actif haut ou actif bas) est vérifié et consigné, et décide du niveau « coupé » des sorties et des résistances de rappel ;
-- le cavalier JD-VCC est retiré : VCC, côté optocoupleurs, sur le 3,3 V de l'ESP32, et JD-VCC, côté bobines, sur le 5 V, pour que la logique 3,3 V commute franchement ;
+- le module a un cavalier JD-VCC séparable ; le cavalier est retiré : VCC, côté optocoupleurs, sur le 3,3 V de la carte ESP32, et JD-VCC, côté bobines, sur le 5 V du LM2596, pour que la logique 3,3 V commute franchement. Une entrée flottante ne fait alors passer aucun courant dans l'optocoupleur, et une carte ESP32 hors tension coupe aussi l'alimentation des optocoupleurs : tous les relais retombent ;
+- le niveau de déclenchement du module (actif haut ou actif bas) est vérifié et consigné, et décide du niveau « coupé » des sorties — avec un module à déclenchement bas, « coupé » est le niveau haut ;
 - ce comportement est vérifié au multimètre, carte en reset, au boot et sans firmware, avant tout raccordement du 230 V.
 
 Ce que la règle protège : un module électromécanique, contrairement à un MOSFET tenu par sa résistance de rappel, peut coller sur une broche flottante ou une logique trop faible ; rien ne chauffe ni ne brumise tant que le firmware n'a pas décidé.
 
 ### RG-limiteur-materiel
 
-Un thermostat indépendant du firmware, réglé à 24 °C, est câblé en série entre le relais de chauffage et le câble chauffant. Il coupe le chauffage au-delà de 24 °C même si le firmware est bloqué relais fermé, et reste en place quelle que soit la version du firmware. Aucun élément électrique n'est à l'intérieur du bac : le câble chauffant est à l'extérieur, les capteurs seuls y entrent.
+Un thermostat indépendant du firmware, réglé à 24 °C, est câblé en série entre le relais de chauffage et le câble chauffant. Il coupe le chauffage au-delà de 24 °C même si le firmware est bloqué relais fermé, et reste en place quelle que soit la version du firmware. Aucun élément sous 230 V n'est dans le bac ni contre lui : le câble chauffant est à l'extérieur, contre la vitre arrière et sous l'isolant. N'entrent dans le bac que les capteurs et des éléments en très basse tension — le ventilateur 5 V, fixé dans le couvercle.
 
 ### RG-brochage
 
@@ -282,6 +291,6 @@ Le brochage de l'ESP32 est le suivant :
 | Relais LED | 27 | Coupé au démarrage |
 | Relais pompe | 25 | Coupé au démarrage |
 | Relais ventilateur | 33 | Coupé au démarrage |
-| LED d'état | 2 | LED intégrée de la carte |
+| LED d'état | 2 | LED externe + 330 Ω : la KS5016 n'en a pas sur cette broche |
 
 Le niveau logique « coupé » des quatre sorties de relais dépend du niveau de déclenchement du module, à vérifier (RG-relais-coupes-sans-commande).

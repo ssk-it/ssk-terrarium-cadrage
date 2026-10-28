@@ -27,9 +27,9 @@ Un module de deux relais statiques Omron G3MB-202P pour le 230 V, un MOSFET logi
 
 ### relais-electromecaniques-optocouples
 
-**Retenue.** Un module de 6 relais 5 V optocouplés, câblé à l'ESP32 dans le boîtier IP65 fermé avec fusible : chauffage, LED, pompe, ventilateur, et deux voies libres. La pompe garde sa diode de roue libre.
+**Retenue.** Un module de 4 relais 5 V optocouplés à cavalier JD-VCC séparable, câblé à l'ESP32 dans le boîtier IP65 fermé avec fusible : chauffage, LED, pompe, ventilateur. La pompe garde sa diode de roue libre. Le module 6 relais de Kubii, d'abord retenu, est écarté : en rupture, et sa fiche ne dit ni son niveau de déclenchement ni s'il a un cavalier JD-VCC.
 
-**Pour** — un seul module, bon marché (8,70 €), pour toutes les sorties, continu comme alternatif ; deux voies de réserve.
+**Pour** — un seul module, bon marché (≈ 8-12 €), pour toutes les sorties, continu comme alternatif.
 **Contre** — une bobine 5 V pilotée par une logique 3,3 V, un niveau de déclenchement à vérifier, une broche flottante qui peut enclencher un relais : d'où les garde-fous de RG-relais-coupes-sans-commande. Un contact peut coller, d'où le limiteur matériel en série (RG-limiteur-materiel).
 
 ## Décision
