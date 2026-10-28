@@ -44,7 +44,7 @@ jobs:
     # l'utilisateur pour le code d'une demande de fusion venue d'un fork.
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           # l'action a besoin de l'historique pour committer par-dessus
           fetch-depth: 0
