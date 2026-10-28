@@ -24,7 +24,7 @@ Le référentiel décrit l'état courant du produit ; les cadrages le transforme
 
 | Domaine | Fonctionnalités |
 |---|---|
-| Régulation | `mesures`, `chauffage`, `brumisation`, `eclairage`, `modes`, `reglages` |
+| Régulation | `mesures`, `chauffage`, `brumisation`, `eclairage`, `ventilation`, `modes`, `reglages` |
 | Sécurité | `protections`, `modes`, `boitier-de-commande` |
 | Supervision | `page-web`, `mqtt`, `alertes`, `mise-a-jour`, `reglages` |
 | Matériel | `boitier-de-commande` |
