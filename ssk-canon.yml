@@ -1,0 +1,36 @@
+# Configuration du projet — lue par l'application et par les Actions
+schema_version: 1
+
+projet:
+  nom: ssk-terrarium
+  description: >
+    Le régulateur autonome, à base d'ESP32, de l'aquarium où vivent une
+    centaine de petits-gris dans un garage à 10-12 °C l'hiver. Il pilote
+    chauffage, éclairage et brumisation, et remonte mesures et alertes en
+    Wi-Fi sans en dépendre pour réguler. Les décisions prises pendant sa
+    conception y sont consignées comme des cadrages.
+
+# Les dépôts de code que ce projet réalise.
+depots_code:
+  - { repo: sskorupski/ssk-terrarium, role: "Firmware ESP32 : PlatformIO, framework Arduino, C++17" }
+
+tags_liens:
+  - carte_trello
+  # Un cadrage cite la piste qu'il réalise (RG-piste-etat-deduit) ; sa demande de fusion la ferme.
+  - piste
+  - issue_github
+  - pull_request
+  - maquette
+  - document
+
+statuts:
+  - brouillon
+  - en_relecture
+  - validee
+  - livree
+
+operations:
+  - cree
+  - modifie
+  - abroge
+  - touche

@@ -1,0 +1,50 @@
+# Workflow à installer dans un DÉPÔT CADRÉ, sous `.github/workflows/`.
+#
+# Vérifie qu'un cadrage en cours de relecture est cohérent avant de pouvoir
+# être livré. À configurer comme contrôle requis dans les règles de protection
+# de la branche principale, faute de quoi il signale sans bloquer.
+#
+# Ce qu'il attrape, que le format seul ne garantit pas : un impact vers une
+# règle inexistante, un énoncé manquant pour une création ou une modification,
+# un rattachement vers une entité inconnue, une règle abrogée par un cadrage non
+# livré. Dès que la demande est proposée à la relecture, il contrôle en outre
+# l'état qu'aura le référentiel une fois fusionné — ce que la livraison exigera
+# est ainsi réclamé tant qu'il est encore temps de l'écrire.
+name: Vérification du référentiel
+
+on:
+  # `ready_for_review` ne fait pas partie des types par défaut : sans lui, un
+  # brouillon proposé à la relecture ne serait recontrôlé qu'à sa poussée
+  # suivante, et le contrôle de livraison manquerait le moment qui le déclenche.
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+# Rien sur la branche principale : la propagation s'y déclenche déjà et vérifie
+# ce qu'elle vient d'écrire. Deux contrôles sur la même poussée se liraient à
+# contretemps — celui qui n'écrit pas rapporterait l'état d'avant l'autre, et
+# échouerait à chaque livraison d'un cadrage créant une règle.
+
+permissions:
+  contents: read
+
+jobs:
+  verifier:
+    # Dépôt public : les runners de GitHub, gratuits, et jamais la machine de
+    # l'utilisateur pour le code d'une demande de fusion venue d'un fork.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Sans l'historique, `origin/main` est hors d'atteinte et le contrôle
+          # d'immuabilité ne peut pas avoir lieu — il le dit, plutôt que de
+          # laisser croire qu'il a eu lieu. Le statut se déduit de la même
+          # comparaison, si bien qu'aucun cadrage ne serait tenu pour livré.
+          fetch-depth: 0
+
+      # `appliquer: false` — la vérification ne modifie jamais le référentiel.
+      # Elle échoue si le cadrage est incohérent, ou si le référentiel a dérivé
+      # de ses cadrages.
+      - uses: ssk-it/ssk-canon-action@main
+        with:
+          referentiel: '.'
+          appliquer: 'false'
