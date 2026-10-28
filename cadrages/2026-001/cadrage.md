@@ -2,7 +2,13 @@
 id: 2026-001
 titre: Le socle du régulateur et le prototype d'hiver — mesures, chauffage, hors-gel et sécurité
 domaines: [regulation, securite, materiel]
-liens: []
+liens:
+  - { tag: piste, nom: '#2', url: 'https://github.com/ssk-it/ssk-terrarium-cadrage/issues/2' }
+  - { tag: piste, nom: '#3', url: 'https://github.com/ssk-it/ssk-terrarium-cadrage/issues/3' }
+  - { tag: piste, nom: '#4', url: 'https://github.com/ssk-it/ssk-terrarium-cadrage/issues/4' }
+  - { tag: piste, nom: '#5', url: 'https://github.com/ssk-it/ssk-terrarium-cadrage/issues/5' }
+  - { tag: piste, nom: '#6', url: 'https://github.com/ssk-it/ssk-terrarium-cadrage/issues/6' }
+  - { tag: piste, nom: '#7', url: 'https://github.com/ssk-it/ssk-terrarium-cadrage/issues/7' }
 impacts:
   - { adr: ADR-microcontroleur-esp32, operation: cree }
   - { adr: ADR-commande-230v-par-relais-filaires, operation: cree }
