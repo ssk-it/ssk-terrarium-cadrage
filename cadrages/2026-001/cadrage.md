@@ -144,7 +144,7 @@ Tout ce qui est en trait plein fonctionne sans réseau. Les traits pointillés s
 | 17 | Câblage 230 V | Cordon secteur 3G 1 mm² avec fiche, porte-fusible 5 × 20 et fusible 1 A temporisé, socle de prise femelle pour brancher le limiteur, borniers à levier | à choisir | 1 lot | ≈ 10-15 € |
 | 18 | Petit câblage | Diode 1N5819 ou 1N4007 aux bornes de la pompe (si non fournie), rallonge pour la fiche Molex 1,25 mm du ventilateur, fils Dupont, fil souple 12 V, câble USB-C pour programmer | à choisir | 1 lot | ≈ 5-10 € |
 | 10 | Éclairage | Ruban LED blanc 12 V, 4,8 W/m, IP54, sécable tous les 5 cm, 3000-4000 K, ≈ 90 cm, collé sous la vitre du couvercle, à l'extérieur si possible | lampe-eclairage-led.com | ≈ 1 m | ≈ 2,90 €/m |
-| 11 | Brumisation | Pompe membrane 12 V, avec sa diode de roue libre, + 1 à 2 buses + tuyau 4 mm + réservoir 2-5 L | à choisir | 1 lot | 25-40 € |
+| 11 | Brumisation (phase 4) | Pompe de brumisation pour terrarium, membrane haute pression 12 V (5-7 bar, sous 1,5 A) avec sa diode de roue libre — une pompe « 385 » à 0,5 bar arrose sans brumiser ; 1 à 2 buses fines ; clapet anti-goutte avant les buses ; tuyau 4 mm ; réservoir 2-5 L posé plus bas que les buses ; eau de pluie filtrée ou déminéralisée | à choisir | 1 lot | 40-80 € |
 | 12 | Boîtier | Boîtier électrique IP65, borniers, presse-étoupes, fusible 230 V | à choisir | 1 | 15-20 € |
 | 13 | Chauffage | Câble antigel existant, 2 m, 50 W, sans thermostat intégré : il remplace l'achat d'un câble de terrarium | déjà possédé | 1 | 0 € |
 | 14 | Limiteur de sécurité | Thermostat Exo Terra 300 W Dimming & Pulse, réglé à 24 °C — non négociable | à choisir | 1 | 65 € |
