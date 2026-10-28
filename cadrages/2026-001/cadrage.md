@@ -103,7 +103,7 @@ flowchart LR
         BUCK["Abaisseur LM2596<br/>12 V → 5 V (bobines, ventilateur)"]
     end
 
-    ALIM["Bloc Mean Well 12 V 3 A"]
+    ALIM["Bloc 12 V 3,5 A"]
 
     LIM["Thermostat Exo Terra<br/>limiteur 24 °C"]
     POMPE["Pompe 12 V<br/>+ réservoir"]
@@ -132,15 +132,15 @@ Tout ce qui est en trait plein fonctionne sans réseau. Les traits pointillés s
 | # | Composant | Référence indicative | Fournisseur | Qté | Prix indicatif |
 | --- | --- | --- | --- | --- | --- |
 | 1 | Microcontrôleur | Carte ESP32-WROOM-32 Keyestudio KS5016 (format Uno, USB-C CH340C, jack VIN 7-12 V avec abaisseur 5 V 2 A intégré) — alimentée directement par le bloc 12 V | Kubii | 1 | 14,40 € |
-| 2 | Capteur T° / HR air | Adafruit Sensirion SHT45 avec filtre PTFE, STEMMA QT, n° 6174 ([fiche](https://www.adafruit.com/product/6174)), I²C 0x44, 3,3 / 5 V. La membrane ne protège que le capteur : vernir la carte (vernis de tropicalisation) en épargnant le capteur, et la placer à l'écart de la buse. Revendeurs UE : Kiwi Electronics, The Pi Hut (variante « with PTFE ») | Adafruit | 1 | ≈ 15 € (13,50 $ US) |
+| 2 | Capteur T° / HR air | Adafruit Sensirion SHT45 avec filtre PTFE, STEMMA QT, n° 6174 ([fiche](https://www.adafruit.com/product/6174)), I²C 0x44, 3,3 / 5 V. La membrane ne protège que le capteur : vernir la carte (vernis de tropicalisation) en épargnant le capteur, et la placer à l'écart de la buse. Réf. Kiwi ADA-6174 ([fiche](https://www.kiwi-electronics.com/en/humidity-sensors-383/adafruit-sensirion-sht45-precision-temperature-amp-humidity-sensor-with-ptfe-stemma-qt-qwiic-20608)) | Kiwi Electronics | 1 | 14,39 € |
 | 3 | Sonde T° substrat | DS18B20 étanche DFRobot | Kubii | 1 | 9,95 € |
-| 4 | Commande des sorties | Module 4 relais 5 V optocouplé **à cavalier JD-VCC séparable**, contacts 10 A 250 V AC — par exemple ELEGOO 4 canaux (déclenchement bas, ASIN B06XK6HCQC). Voies : chauffage, LED, pompe, ventilateur. Celui de Kubii est écarté : en rupture, et sa fiche ne dit ni le niveau de déclenchement ni la présence de JD-VCC | hors Kubii | 1 | ≈ 8-12 € |
+| 4 | Commande des sorties | Module 4 relais 5 V, réf. Kiwi KW-1613 ([fiche](https://www.kiwi-electronics.com/en/4-channel-5v-relay-module-1330)) : relais Songle SRD-05VDC-SL-C (10 A 250 V AC), optocoupleurs, cavalier JD-VCC séparable — vérifiés sur la photo du produit —, déclenchement bas. Voies : chauffage, LED, pompe, ventilateur. Le 6 relais de Kubii est écarté : en rupture, et sa fiche ne dit ni le niveau de déclenchement ni la présence de JD-VCC | Kiwi Electronics | 1 | 5,99 € |
 | 5 | Ventilation | Ventilateur 80 × 80 mm 5 V | Kubii | 1 | 7,96 € |
 | 6 | LED d'état | LED 3 mm + résistance 330 Ω sur GPIO 2 : la KS5016 n'a pas de LED sur cette broche. Le 4,7 kΩ du 1-Wire est sur la carte adaptatrice du kit DS18B20 (à vérifier à réception) ; le 10 kΩ du MOSFET n'a plus lieu d'être | à choisir | 1 | < 1 € |
 | 7 | Conversion 12 V → 5 V | Abaisseur LM2596 réglable à afficheur, **réglé à 5,0 V avant tout branchement** — alimente les bobines (JD-VCC) et le ventilateur, à l'écart de la carte | Kubii | 1 | 2,95 € |
-| 8 | Alimentation | Mean Well GST36E12-P1J, 12 V 3 A 36 W, jack 5,5 × 2,1 centre +, −30 … +70 °C — stock à vérifier (alimentatorishop, RS, TME, Farnell) | à choisir | 1 | 15-20 € HT |
-| 9 | Raccord d'alimentation | Embase jack femelle 5,5 × 2,1 à bornier, et un cordon jack mâle 5,5 × 2,1 vers la carte | à choisir | 1 | — |
-| 16 | Câble du capteur air | Câble STEMMA QT / Qwiic (JST SH 4 broches) vers fils ou connecteurs femelles, ≈ 40 cm à 1 m — non fourni avec le SHT45 | à choisir | 1 | ≈ 1-3 € |
+| 8 | Alimentation | HN Power HNP42EU-120, 12 V 3,5 A 42 W, fiche 5,5 × 2,1, prise EU, protégée contre surcharge et court-circuit, réf. Kiwi KW-2196 ([fiche](https://www.kiwi-electronics.com/en/power-supply-12v-3-5a-42w-5-5x2-1mm-dc-plug-3740)) — polarité (centre +) à vérifier au multimètre avant de brancher la carte. Retenue plutôt que le Mean Well GST36E12-P1J pour tout commander chez Kiwi | Kiwi Electronics | 1 | 19,79 € |
+| 9 | Raccord d'alimentation | Embase jack femelle 5,5 × 2,1 à bornier, réf. Kiwi ([fiche](https://www.kiwi-electronics.com/en/terminal-block-to-2-1mm-dc-barrel-jack-female-747)), et un cordon jack mâle 5,5 × 2,1 vers la carte | Kiwi Electronics | 1 | 1,55 € |
+| 16 | Câble du capteur air | Câble STEMMA QT / Qwiic JST SH 4 broches vers prises femelles, 150 mm ([fiche](https://www.kiwi-electronics.com/en/stemma-qt-qwiic-jst-sh-4-pin-cable-with-premium-female-sockets-150mm-long-10388)), prolongé par des fils Dupont mâle/femelle 20 cm ([fiche](https://www.kiwi-electronics.com/en/premium-jumperwires-ribbon-40-wires-m-f-20cm-364)) — la KS5016 sort l'I²C sur broches mâles. Variante plus propre : câble JST SH 400 mm + adaptateur SparkFun STEMMA QT, à souder | Kiwi Electronics | 1 + 1 | 1,14 € + 2,99 € |
 | 17 | Câblage 230 V | Cordon secteur 3G 1 mm² avec fiche, porte-fusible 5 × 20 et fusible 1 A temporisé, socle de prise femelle pour brancher le limiteur, borniers à levier | à choisir | 1 lot | ≈ 10-15 € |
 | 18 | Petit câblage | Diode 1N5819 ou 1N4007 aux bornes de la pompe (si non fournie), rallonge pour la fiche Molex 1,25 mm du ventilateur, fils Dupont, fil souple 12 V, câble USB-C pour programmer | à choisir | 1 lot | ≈ 5-10 € |
 | 10 | Éclairage | Ruban LED blanc 12 V, 4,8 W/m, IP54, sécable tous les 5 cm, 3000-4000 K, ≈ 90 cm, collé sous la vitre du couvercle, à l'extérieur si possible | lampe-eclairage-led.com | ≈ 1 m | ≈ 2,90 €/m |
@@ -162,7 +162,7 @@ La commande Kubii (lignes 1, 3, 5 et 7) revient à environ 35 € ; la référen
 | Pompe de brumisation | 0,5-1 A, à vérifier — en choisir une sous 1,5 A |
 | **Total, tout allumé** | **≈ 1,3-1,9 A** |
 
-Le bloc de 3 A laisse une marge, même au démarrage de la pompe. La carte reçoit le 12 V par son jack (VIN 7-12 V, abaisseur 5 V 2 A et régulateur 3,3 V intégrés) ; le LM2596 n'alimente que les bobines et le ventilateur, pour garder leurs à-coups loin de l'ESP32. Le circuit du garage doit être protégé par un différentiel 30 mA, comme tout circuit en local humide.
+Le bloc de 3,5 A laisse une marge, même au démarrage de la pompe. La carte reçoit le 12 V par son jack (VIN 7-12 V, abaisseur 5 V 2 A et régulateur 3,3 V intégrés) ; le LM2596 n'alimente que les bobines et le ventilateur, pour garder leurs à-coups loin de l'ESP32. Le circuit du garage doit être protégé par un différentiel 30 mA, comme tout circuit en local humide.
 
 ### Puissance de chauffe
 
