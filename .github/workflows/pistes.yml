@@ -35,10 +35,9 @@ jobs:
     if: >-
       contains(github.event.issue.labels.*.name, 'piste')
       || (github.event.action == 'unlabeled' && github.event.label.name == 'piste')
-    # Les runners auto-hébergés de l'organisation (macOS, Apple Silicon),
-    # comme tous les workflows du projet : seul écart avec le modèle de
-    # ssk-canon-action.
-    runs-on: [self-hosted, macOS, ARM64]
+    # Dépôt public : les runners de GitHub, gratuits, et jamais la machine de
+    # l'utilisateur pour le code d'une demande de fusion venue d'un fork.
+    runs-on: ubuntu-latest
     steps:
       # Le déclenchement par une issue extrait la branche principale : c'est elle
       # dont les identifiants comptent.

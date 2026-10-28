@@ -31,6 +31,10 @@ Le référentiel décrit l'état courant du produit ; les cadrages le transforme
 
 Les règles de gestion naissent des cadrages : leur texte n'est écrit dans `rules/` qu'à la livraison de l'un d'eux.
 
+## Licence
+
+[MIT](LICENSE).
+
 ## Mise en place
 
 Le dépôt se crée par [`outils/mise-en-place-github.sh`](outils/mise-en-place-github.sh), relançable.

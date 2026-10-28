@@ -79,7 +79,7 @@ Ce cadrage est le premier du référentiel : aucune règle, aucune décision, au
 
 ### Non fonctionnelles
 
-- **NF1 Autonomie** : la régulation tourne entièrement sur l'ESP32. Wi-Fi, broker ou serveur absents n'ont aucun effet sur elle. Le chauffage, le hors-gel et les protections n'ont pas besoin de l'heure : l'abandon de l'horloge RTC laisse NF1 intacte.
+- **NF1 Autonomie** : la régulation tourne entièrement sur l'ESP32. Wi-Fi, broker ou serveur absents n'ont aucun effet sur elle. Le chauffage, le hors-gel et les protections n'ont pas besoin de l'heure : l'abandon de l'horloge RTC laisse NF1 intacte. Le Wi-Fi du domicile couvre le garage : la supervision n'a pas besoin de matériel réseau en plus.
 - **NF2 Sécurité intrinsèque** : un limiteur matériel coupe le chauffage au-delà de 24 °C, indépendamment du firmware.
 - **NF3 Fail-safe logiciel** : capteur en défaut → chauffage et brumisation coupés, alerte émise.
 - **NF4 Persistance** : réglages stockés en mémoire non volatile (NVS), conservés après coupure.
@@ -93,7 +93,7 @@ flowchart LR
     subgraph Bac["Aquarium"]
         SHT["SHT45<br/>T° + HR air"]
         DS["DS18B20<br/>T° substrat"]
-        CAB["Câble chauffant 50 W<br/>(extérieur, paroi arrière)"]
+        CAB["Câble antigel 50 W<br/>(extérieur, paroi arrière)"]
         LED["Ruban LED 12 V<br/>(sous la vitre du couvercle)"]
         BUSE["Buse de brumisation"]
         VENT["Ventilateur 80 mm 5 V"]
@@ -119,7 +119,7 @@ flowchart LR
     REL -- 12 V --> POMPE --> BUSE
     REL -- 5 V --> VENT
 
-    ESP -. Wi-Fi / MQTT .-> MQTT["Broker Mosquitto"]
+    ESP -. Wi-Fi / MQTT .-> MQTT["Broker Mosquitto<br/>(infrastructure à installer)"]
     ESP -. NTP .-> NTP["Serveur de temps"]
     MQTT -.-> TSDB["InfluxDB + Grafana<br/>(phase 5)"]
     ESP -. HTTPS .-> NTFY["ntfy<br/>alertes téléphone"]
@@ -144,7 +144,7 @@ Tout ce qui est en trait plein fonctionne sans réseau. Les traits pointillés s
 | 10 | Éclairage | Ruban LED blanc 12 V, 4,8 W/m, IP54, sécable tous les 5 cm, 3000-4000 K, ≈ 90 cm, collé sous la vitre du couvercle, à l'extérieur si possible | lampe-eclairage-led.com | ≈ 1 m | ≈ 2,90 €/m |
 | 11 | Brumisation | Pompe membrane 12 V, avec sa diode de roue libre, + 1 à 2 buses + tuyau 4 mm + réservoir 2-5 L | à choisir | 1 lot | 25-40 € |
 | 12 | Boîtier | Boîtier électrique IP65, borniers, presse-étoupes, fusible 230 V | à choisir | 1 | 15-20 € |
-| 13 | Chauffage | Câble chauffant terrarium 50 W (ou câble antigel existant, s'il n'a pas de thermostat intégré) | à choisir | 1 | 0-35 € |
+| 13 | Chauffage | Câble antigel existant, 2 m, 50 W, sans thermostat intégré : il remplace l'achat d'un câble de terrarium | déjà possédé | 1 | 0 € |
 | 14 | Limiteur de sécurité | Thermostat Exo Terra 300 W Dimming & Pulse, réglé à 24 °C — non négociable | à choisir | 1 | 65 € |
 | 15 | Isolation | Polystyrène extrudé 2-3 cm | à choisir | 1 panneau | 10-20 € |
 
@@ -176,10 +176,7 @@ La phase 1 est prioritaire : avec un garage à 10-12 °C, le hors-gel et la rég
 
 ## Questions ouvertes
 
-- Le câble antigel existant a-t-il un boîtier thermostat intégré ? S'il n'en a pas, il remplace l'achat d'un câble de terrarium.
-- Où héberger le broker MQTT et l'historique : machine locale ou infrastructure existante ?
-- Le Wi-Fi du domicile couvre-t-il correctement le garage ?
-- Dépôt public ou privé, et quelle licence ?
+- Quelle infrastructure installer pour le broker MQTT (phase 3) et l'historique (phase 5) ? Aucune n'existe : elle est à installer, et se cadrera à part avant la phase 3.
 - Quel est le niveau de déclenchement du module de relais (actif haut ou actif bas) ? Il se vérifie et se consigne avant tout raccordement, et décide du niveau des sorties au repos.
 - La pompe consomme-t-elle 0,5 ou 1 A ?
 

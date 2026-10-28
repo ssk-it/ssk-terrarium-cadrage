@@ -7,11 +7,11 @@
 set -euo pipefail
 
 DEPOT="ssk-it/ssk-terrarium-cadrage"
-# Visibilité du dépôt : en attente de la décision de l'utilisateur (question
-# ouverte du cadrage 2026-001). Un dépôt privé fait tourner ses workflows sur le
-# runner auto-hébergé, un dépôt public sur ubuntu-latest : changer l'une change
-# l'autre dans .github/workflows/.
-VISIBILITE="${VISIBILITE:-private}"
+# Dépôt public, sous licence MIT (décision de l'utilisateur, cadrage 2026-001).
+# Un dépôt public fait tourner ses workflows sur ubuntu-latest, un dépôt privé
+# sur le runner auto-hébergé : changer l'une change l'autre dans
+# .github/workflows/.
+VISIBILITE="${VISIBILITE:-public}"
 RACINE="$(cd "$(dirname "$0")/.." && pwd)"
 
 confirmer() {
