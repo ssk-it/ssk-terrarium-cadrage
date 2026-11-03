@@ -58,7 +58,7 @@ Ce cadrage est le premier du référentiel : aucune règle, aucune décision, au
 
 Le parcours de la phase 1, sans réseau ni interface : les phases suivantes y ajouteront l'éclairage, la ventilation, la brumisation, la page web, MQTT et les alertes.
 
-1. Avant tout raccordement du 230 V, je câble le boîtier, je vérifie au multimètre que chaque relais reste ouvert carte en reset, au boot et sans firmware, et je pose le limiteur Exo Terra à 24 °C en série du câble antigel.
+1. Avant tout raccordement du 230 V, je câble le boîtier, je vérifie au multimètre que chaque relais reste ouvert carte en reset, au boot et sans firmware, et je pose le limiteur Exo Terra à 24 °C en série des câbles chauffants.
 2. Au premier démarrage, le régulateur part en `MAINTENANCE`, tout coupé. Je choisis le mode par la liaison série USB.
 3. En mode `ACTIF`, il tient l'air autour de 19 °C. En novembre, je passe en `HIBERNATION` : le chauffage ne protège plus que du gel. Pour nettoyer le bac, je passe en `MAINTENANCE` : tout est coupé, les mesures continuent.
 4. Une coupure de courant survient : au retour, le régulateur repart sorties coupées, reprend le mode dans lequel il tournait, et la régulation du chauffage — le Wi-Fi n'y joue aucun rôle.
@@ -97,7 +97,7 @@ flowchart LR
     subgraph Bac["Aquarium"]
         SHT["SHT45<br/>T° + HR air"]
         DS["DS18B20<br/>T° substrat"]
-        CAB["Câble antigel 50 W<br/>(extérieur, paroi arrière)"]
+        CAB["Câbles chauffants 50 W + 25 W<br/>(extérieur, parois arrière et latérale)"]
         LED["Ruban LED 12 V<br/>(sous la vitre du couvercle)"]
         BUSE["Buse de brumisation"]
         VENT["Ventilateur 80 mm 5 V"]
@@ -147,12 +147,12 @@ Tout ce qui est en trait plein fonctionne sans réseau. Les traits pointillés s
 | 8 | Alimentation | HN Power HNP42EU-120, 12 V 3,5 A 42 W, fiche 5,5 × 2,1, prise EU, protégée contre surcharge et court-circuit, réf. Kiwi KW-2196 ([fiche](https://www.kiwi-electronics.com/en/power-supply-12v-3-5a-42w-5-5x2-1mm-dc-plug-3740)) — polarité (centre +) à vérifier au multimètre avant de brancher la carte. Retenue plutôt que le Mean Well GST36E12-P1J pour tout commander chez Kiwi | Kiwi Electronics | 1 | 19,79 € |
 | 9 | Raccord d'alimentation | Embase jack femelle 5,5 × 2,1 à bornier, réf. Kiwi ([fiche](https://www.kiwi-electronics.com/en/terminal-block-to-2-1mm-dc-barrel-jack-female-747)), et un cordon jack mâle 5,5 × 2,1 vers la carte | Kiwi Electronics | 1 | 1,55 € |
 | 16 | Câble du capteur air | Câble STEMMA QT / Qwiic JST SH 4 broches vers prises femelles, 150 mm ([fiche](https://www.kiwi-electronics.com/en/stemma-qt-qwiic-jst-sh-4-pin-cable-with-premium-female-sockets-150mm-long-10388)), prolongé par des fils Dupont mâle/femelle 20 cm ([fiche](https://www.kiwi-electronics.com/en/premium-jumperwires-ribbon-40-wires-m-f-20cm-364)) — la KS5016 sort l'I²C sur broches mâles. Variante plus propre : câble JST SH 400 mm + adaptateur SparkFun STEMMA QT, à souder | Kiwi Electronics | 1 + 1 | 1,14 € + 2,99 € |
-| 17 | Câblage 230 V | Cordon secteur 3G 1 mm² avec fiche, porte-fusible 5 × 20 et fusible 1 A temporisé, socle de prise femelle pour brancher le limiteur, borniers à levier | à choisir | 1 lot | ≈ 10-15 € |
+| 17 | Câblage 230 V | Cordon secteur 3G 1 mm² avec fiche, porte-fusible 5 × 20 et fusible 1 A temporisé, socle de prise femelle pour brancher le limiteur, multiprise 2 prises derrière le limiteur pour les deux câbles chauffants, borniers à levier | à choisir | 1 lot | ≈ 10-15 € |
 | 18 | Petit câblage | Diode 1N5819 ou 1N4007 aux bornes de la pompe (si non fournie), rallonge pour la fiche Molex 1,25 mm du ventilateur, fils Dupont, fil souple 12 V, câble USB-C pour programmer | à choisir | 1 lot | ≈ 5-10 € |
 | 10 | Éclairage | Ruban LED blanc 12 V, 4,8 W/m, IP54, sécable tous les 5 cm, 3000-4000 K, ≈ 90 cm, collé sous la vitre du couvercle, à l'extérieur si possible | lampe-eclairage-led.com | ≈ 1 m | ≈ 2,90 €/m |
 | 11 | Brumisation (phase 4) | Pompe de brumisation pour terrarium, membrane haute pression 12 V (5-7 bar, sous 1,5 A) avec sa diode de roue libre — une pompe « 385 » à 0,5 bar arrose sans brumiser ; 1 à 2 buses fines ; clapet anti-goutte avant les buses ; tuyau 4 mm ; réservoir 2-5 L posé plus bas que les buses ; eau de pluie filtrée ou déminéralisée | à choisir | 1 lot | 40-80 € |
 | 12 | Boîtier | Boîtier électrique IP65, borniers, presse-étoupes, fusible 230 V | à choisir | 1 | 15-20 € |
-| 13 | Chauffage | Câble antigel existant, 2 m, 50 W, sans thermostat intégré : il remplace l'achat d'un câble de terrarium | déjà possédé | 1 | 0 € |
+| 13 | Chauffage | Câbles chauffants Reptil'us HC Expert ([fiche](https://www.zoomalia.com/animalerie/cable-chauffant-pour-terrarium-reptil-us-hc-expert-p-38085.html)), silicone et fibre de verre, étanches, sans thermostat : 6 m 50 W sur la vitre arrière (6 allers-retours, ≈ 6 cm d'écart) et 4,5 m 25 W sur une vitre latérale (≈ 4 cm d'écart), soit 75 W. Collés à l'extérieur au ruban aluminium, sans jamais se croiser, sous l'isolant — les ventouses fournies ne servent pas. Le câble antigel existant est écarté : son thermostat intégré ne l'allume que vers 3-5 °C | Zoomalia | 1 + 1 | 12,99 € + 9,99 € |
 | 14 | Limiteur de sécurité | Thermostat Exo Terra 300 W Dimming & Pulse, réglé à 24 °C — non négociable | à choisir | 1 | 65 € |
 | 15 | Isolation | Polystyrène extrudé 2-3 cm | à choisir | 1 panneau | 10-20 € |
 
@@ -172,7 +172,7 @@ Le bloc de 3,5 A laisse une marge, même au démarrage de la pompe. La carte re�
 
 ### Puissance de chauffe
 
-Estimation, à confirmer à l'usage : le bac (≈ 2,3 m² de parois) perd de l'ordre de 7 W par degré d'écart avec le garage, une fois arrière, côtés et fond isolés au polystyrène, la façade et le couvercle restant vitrés. Tenir 19 °C dans un garage à 11 °C demande donc ≈ 55-65 W, ventilation comprise : le câble antigel de 50 W est **juste** en mode `ACTIF` l'hiver. Le hors-gel de l'hibernation (4-6 °C dans un garage à 10-12 °C) ne demande, lui, aucune chauffe. Pour garder de la marge : isoler aussi le couvercle hors de la zone d'éclairage et couvrir la façade la nuit ; si la consigne n'est pas tenue, ajouter un second câble ou passer à un câble plus puissant, toujours derrière le limiteur. Le chauffage, seul en 230 V, ne passe que par son relais et le limiteur.
+Estimation, à confirmer à l'usage : le bac (≈ 2,3 m² de parois) perd de l'ordre de 7 W par degré d'écart avec le garage, une fois arrière, côtés et fond isolés au polystyrène, la façade et le couvercle restant vitrés. Tenir 19 °C dans un garage à 11 °C demande donc ≈ 55-65 W, ventilation comprise : les 75 W des deux câbles laissent ≈ 15-35 % de marge en mode `ACTIF` l'hiver. Une chauffe sous-dimensionnée tournerait sans arrêt et buterait sur RG-chauffe-continue-bornee toutes les 2 heures. Le hors-gel de l'hibernation (4-6 °C dans un garage à 10-12 °C) ne demande, lui, aucune chauffe. Pour garder de la marge : isoler aussi le couvercle hors de la zone d'éclairage et couvrir la façade la nuit ; si la consigne n'est pas tenue, ajouter un câble sur la seconde vitre latérale, toujours derrière le limiteur. À la mise en service, mesurer la vitre côté intérieur, là où les escargots se posent, pour vérifier qu'aucune bande n'y est trop chaude. Le chauffage, seul en 230 V, ne passe que par son relais et le limiteur.
 
 ## Feuille de route
 
@@ -282,7 +282,7 @@ Ce que la règle protège : un module électromécanique, contrairement à un MO
 
 ### RG-limiteur-materiel
 
-Un thermostat indépendant du firmware, réglé à 24 °C, est câblé en série entre le relais de chauffage et le câble chauffant. Il coupe le chauffage au-delà de 24 °C même si le firmware est bloqué relais fermé, et reste en place quelle que soit la version du firmware. Aucun élément sous 230 V n'est dans le bac ni contre lui : le câble chauffant est à l'extérieur, contre la vitre arrière et sous l'isolant. N'entrent dans le bac que les capteurs et des éléments en très basse tension — le ventilateur 5 V, fixé dans le couvercle.
+Un thermostat indépendant du firmware, réglé à 24 °C, est câblé en série entre le relais de chauffage et les câbles chauffants. Il coupe le chauffage au-delà de 24 °C même si le firmware est bloqué relais fermé, et reste en place quelle que soit la version du firmware. Aucun élément sous 230 V n'est dans le bac ni contre lui : les câbles chauffants sont à l'extérieur, contre les vitres et sous l'isolant. N'entrent dans le bac que les capteurs et des éléments en très basse tension — le ventilateur 5 V, fixé dans le couvercle.
 
 ### RG-brochage
 
