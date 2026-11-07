@@ -264,7 +264,7 @@ Une impulsion de brumisation dure au plus 30 secondes, quels que soient les rég
 
 ### RG-chauffe-continue-bornee
 
-Le chauffage ne reste pas allumé plus de 2 heures d'affilée : au-delà, il est coupé, et le dépassement est signalé par la LED d'état et sur la liaison série ; l'alerte sur téléphone s'y ajoutera avec sa phase. Ce que la règle protège : une sonde décrochée ou un câble défaillant ne fait pas chauffer sans fin.
+Le chauffage ne reste pas allumé plus de 2 heures d'affilée : au-delà, il est coupé pendant 15 minutes, et le dépassement est signalé par la LED d'état et sur la liaison série ; l'alerte sur téléphone s'y ajoutera avec sa phase. Passé ces 15 minutes, le chauffage reprend sur la consigne du mode, sans intervention : un verrou posé la nuit laisserait le bac refroidir jusqu'au matin, hors-gel compris, alors que le limiteur à 24 °C couvre déjà la surchauffe (RG-limiteur-materiel). Des coupures qui se répètent signalent une chauffe sous-dimensionnée ou un relais collé. Ce que la règle protège : une sonde décrochée ou un câble défaillant ne fait pas chauffer sans fin.
 
 ### RG-chien-de-garde
 
