@@ -5,6 +5,7 @@ domaines: [regulation, securite, supervision]
 liens:
   - { tag: pull_request, nom: 'ssk-terrarium-cadrage#22', url: 'https://github.com/ssk-it/ssk-terrarium-cadrage/pull/22' }
   - { tag: pull_request, nom: 'ssk-terrarium#13', url: 'https://github.com/sskorupski/ssk-terrarium/pull/13' }
+  - { tag: issue_github, nom: 'ssk-terrarium#14', url: 'https://github.com/sskorupski/ssk-terrarium/issues/14' }
 impacts:
   - { adr: ADR-heure-par-ntp, operation: cree }
   - { regle: RG-chauffage-par-plages, operation: cree }
