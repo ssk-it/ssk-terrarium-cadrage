@@ -5,6 +5,8 @@ domaines: [supervision, regulation, securite]
 liens:
   - { tag: piste, nom: '#12', url: 'https://github.com/ssk-it/ssk-terrarium-cadrage/issues/12' }
   - { tag: pull_request, nom: 'ssk-terrarium-cadrage#21', url: 'https://github.com/ssk-it/ssk-terrarium-cadrage/pull/21' }
+  - { tag: issue_github, nom: 'ssk-terrarium#12', url: 'https://github.com/sskorupski/ssk-terrarium/issues/12' }
+  - { tag: issue_github, nom: 'ssk-it-infra#34', url: 'https://github.com/ssk-it/ssk-it-infra/issues/34' }
 impacts:
   - { adr: ADR-portail-wifi-maison, operation: cree }
   - { adr: ADR-supervision-par-mqtt-tls, operation: cree }
