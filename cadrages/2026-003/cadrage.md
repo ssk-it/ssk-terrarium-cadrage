@@ -46,7 +46,6 @@ P4 prime sur les trois autres, comme O6 dans 2026-001 et W4 dans 2026-002.
 - **RG-chauffage-par-hysteresis** décrit déjà le comportement en plage ; elle n'est pas modifiée.
 - **RG-reglages-bornes** et la décision `04-reglages-a-distance` de 2026-002 veulent que tout réglage à distance soit borné à la compilation : le plancher de 12-14 °C n'est pas un réglage (décision `02-plancher-hors-plage`), et les plages sont validées en entier.
 - Le NTP est renvoyé par 2026-002 à la piste #8 (éclairage à l'heure NTP), qui proposait `ADR-heure-par-ntp`. Ce cadrage crée cet ADR pour le seul besoin des plages. L'heure estimée après un démarrage sans réseau (`RG-heure-ntp` de la piste) reste à la piste #8, et n'entre pas dans le chauffage.
-- Incohérence relevée, non tranchée ici : 2026-002 cite la décision `06-protection-contre-la-surchauffe` de 2026-001, qui n'existe que sur la branche de ssk-terrarium-cadrage#21.
 
 ## Parcours utilisateur
 
