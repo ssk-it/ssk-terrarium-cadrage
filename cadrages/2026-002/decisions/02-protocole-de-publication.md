@@ -27,7 +27,7 @@ MQTT sur le port 1883, sans chiffrement.
 
 ### mqtt-tls
 
-**Retenue.** MQTT sur TLS (8883), avec PubSubClient, déjà épinglé, et `WiFiClientSecure` ; certificat vérifié contre ISRG Root X1.
+**Retenue.** MQTT sur TLS, avec PubSubClient, déjà épinglé, et `WiFiClientSecure` ; certificat vérifié contre ISRG Root X1.
 
 **Pour** — publication et commandes sur une seule connexion sortante ; aucun code serveur ; lisible par tout client MQTT ; les sujets de la piste #13 s'y appliquent tels quels.
 **Contre** — la poignée de main TLS prend quelques dizaines de kilo-octets de mémoire et une à deux secondes ; la racine embarquée devra suivre Let's Encrypt.

@@ -27,11 +27,17 @@ Mosquitto, plus une base de séries temporelles et un tableau de bord, dès main
 
 ### mosquitto-seul-sur-ssk-it-01
 
-**Retenue.** Un Mosquitto seul, sans volume, derrière une entrée TCP `mqtts` du Traefik existant, avec un certificat cert-manager et des comptes scellés.
+**Retenue.** Un Mosquitto seul, sans volume, derrière le Traefik existant, avec un certificat cert-manager et des comptes scellés.
 
 **Pour** — tout ce qu'il faut existe déjà sur le cluster ; quelques mégaoctets de mémoire ; joignable de partout.
-**Contre** — un port public de plus sur le Load Balancer du cluster ; pas d'historique, et l'état retenu se perd au redémarrage du pod (republié dans les 30 s).
+**Contre** — pas d'historique, et l'état retenu se perd au redémarrage du pod (republié dans les 30 s).
+
+Pour le joindre, trois voies ont été comparées en réalisant ssk-it/ssk-it-infra#34 :
+
+- **un port 8883 sur le Load Balancer** : un écouteur de plus sur le Load Balancer et une entrée de plus dans Traefik, qui servent la production de Skoppt ;
+- **un Load Balancer propre au courtier** : une adresse et un coût de plus, le TLS à terminer dans Mosquitto ;
+- **le port 443 existant, aiguillé par le nom `mq.ssk-it.fr` (SNI)** : **retenue**, sans rien ajouter au Load Balancer ni aux entrées de Traefik, le PROXY protocol y étant déjà lu. Le client doit envoyer le nom dans sa poignée de main, ce que font `WiFiClientSecure`, `mosquitto_sub` et MQTT Explorer.
 
 ## Décision
 
-Mosquitto seul sur ssk-it-01. Ce qui a tranché : réutiliser l'entrée, les certificats et les secrets du cluster existant, sans rien y ajouter que le courtier lui-même.
+Mosquitto seul sur ssk-it-01, joint sur le port 443 par son propre nom. Ce qui a tranché : réutiliser l'entrée, les certificats et les secrets du cluster existant, sans rien y ajouter que le courtier lui-même — ni port, ni Load Balancer.

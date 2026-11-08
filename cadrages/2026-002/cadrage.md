@@ -83,12 +83,12 @@ flowchart LR
     end
     TEL["Téléphone / PC"] -. "Wi-Fi ssk-terrarium-XXXX<br/>(configuration seulement)" .-> ESP
     ESP -. "Wi-Fi du domicile" .-> BOX["Box"]
-    BOX -. "Internet, MQTT sur TLS, 8883" .-> LB["Load Balancer OVH<br/>178.33.184.158"]
+    BOX -. "Internet, MQTT sur TLS, 443<br/>SNI mq.ssk-it.fr" .-> LB["Load Balancer OVH<br/>178.33.184.158"]
     subgraph ssk-it-01["Cluster ssk-it-01 (OVH SBG5)"]
-        LB --> TRF["Traefik<br/>entrée mqtts, TLS terminé<br/>certificat cert-manager"]
+        LB --> TRF["Traefik<br/>entrée websecure, routeur TCP HostSNI<br/>TLS terminé, certificat cert-manager"]
         TRF --> MOS["Mosquitto<br/>comptes + ACL, sans volume"]
     end
-    USER["MQTT Explorer / mosquitto_sub"] -. "MQTT sur TLS, 8883" .-> LB
+    USER["MQTT Explorer / mosquitto_sub"] -. "MQTT sur TLS, 443" .-> LB
 ```
 
 Tout est en pointillé : rien de ce schéma n'entre dans la régulation.
@@ -104,8 +104,6 @@ Restent à cadrer, chacun dans sa piste :
 ## Questions ouvertes
 
 - La chaîne du certificat que Traefik présentera : un certificat RSA de Let's Encrypt remonte aujourd'hui à ISRG Root X1, que le firmware embarque. Le vérifier sur le certificat réellement servi, et le consigner ici avant la fusion.
-- Le Load Balancer d'OVH envoie le PROXY protocol v2 sur le port existant ; le nouveau port 8883 doit le recevoir aussi, et l'entrée `mqtts` de Traefik le lire. À vérifier sur le cluster.
-- Ce que le port supplémentaire coûte sur le Load Balancer OVH, s'il coûte quelque chose.
 
 ## Énoncés
 
@@ -115,11 +113,11 @@ Le Wi-Fi et le courtier se configurent par un portail captif écrit dans le firm
 
 ### ADR-supervision-par-mqtt-tls
 
-Le régulateur publie son état et reçoit ses commandes en MQTT, chiffré par TLS sur le port 8883, avec PubSubClient et le `WiFiClientSecure` du cœur Arduino ; il vérifie le certificat du courtier contre la racine ISRG Root X1, embarquée dans le firmware. Ce qui l'a décidé : MQTT porte à la fois la publication et les commandes sur une connexion que le régulateur ouvre lui-même, sans service à écrire côté serveur, et le chiffrement est indispensable dès lors que le courtier est joint par Internet — décision `02-protocole-de-publication`.
+Le régulateur publie son état et reçoit ses commandes en MQTT, chiffré par TLS, avec PubSubClient et le `WiFiClientSecure` du cœur Arduino ; il vérifie le certificat du courtier contre la racine ISRG Root X1, embarquée dans le firmware. Ce qui l'a décidé : MQTT porte à la fois la publication et les commandes sur une connexion que le régulateur ouvre lui-même, sans service à écrire côté serveur, et le chiffrement est indispensable dès lors que le courtier est joint par Internet — décision `02-protocole-de-publication`.
 
 ### ADR-courtier-mosquitto-sur-ssk-it-01
 
-Le courtier est un Mosquitto seul, déployé sur le cluster ssk-it-01 par le dépôt `ssk-it/ssk-it-infra`, sans volume ni historique. Il est joint par une entrée TCP `mqtts` (8883) du Traefik existant, qui termine le TLS avec un certificat cert-manager pour `mqtt.ssk-it.fr`. Ce qui l'a décidé : le cluster existe déjà, avec son entrée publique, ses certificats et ses secrets scellés, et Mosquitto y tient dans quelques mégaoctets ; une machine au domicile aurait été une infrastructure de plus à tenir — décision `03-hebergement-du-courtier`.
+Le courtier est un Mosquitto seul, déployé sur le cluster ssk-it-01 par le dépôt `ssk-it/ssk-it-infra`, sans volume ni historique. Il est joint à `mq.ssk-it.fr`, sur le port 443 : un routeur TCP du Traefik existant prend sur l'entrée `websecure` les connexions qui demandent ce nom dans leur poignée de main (SNI), y termine le TLS avec un certificat cert-manager, et passe le flux à Mosquitto. Aucun port n'est ajouté au Load Balancer. Ce qui l'a décidé : le cluster existe déjà, avec son entrée publique, ses certificats et ses secrets scellés, et Mosquitto y tient dans quelques mégaoctets ; une machine au domicile aurait été une infrastructure de plus à tenir — décision `03-hebergement-du-courtier`.
 
 ### RG-configuration-wifi-sur-place
 
@@ -137,7 +135,7 @@ Le régulateur publie et reçoit sous le préfixe `ssk-terrarium/<id>/`, où `<i
 | `cmd/mode` | reçu | `ACTIF`, `HIBERNATION` ou `MAINTENANCE` |
 | `cmd/config` | reçu | JSON partiel : `consigne`, `hysteresis` (°C) |
 
-Une commande retenue par le courtier n'est jamais appliquée : seule compte une commande publiée pendant que le régulateur est connecté. Toute commande reçoit sa réponse sur `event`. Ce que la règle protège : on lit l'état sans attendre la mesure suivante, et une commande ancienne, oubliée sur le courtier, ne change pas le mode à la reconnexion suivante.
+Une commande retenue par le courtier n'est jamais appliquée : seule compte une commande publiée pendant que le régulateur est connecté. Le courtier remet les messages retenus juste après l'abonnement, et la bibliothèque PubSubClient ne dit pas si un message l'est : toute commande reçue dans les 3 secondes qui suivent l'abonnement est donc ignorée, et l'ignorance signalée sur `event`. Toute commande reçoit sa réponse sur `event`. Ce que la règle protège : on lit l'état sans attendre la mesure suivante, et une commande ancienne, oubliée sur le courtier, ne change pas le mode à la reconnexion suivante.
 
 ### RG-courtier-authentifie
 
