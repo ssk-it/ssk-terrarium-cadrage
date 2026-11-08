@@ -27,7 +27,7 @@ impacts:
   - { regle: RG-chauffe-continue-bornee, operation: cree }
   - { regle: RG-chien-de-garde, operation: cree }
   - { regle: RG-relais-coupes-sans-commande, operation: cree }
-  - { regle: RG-limiteur-materiel, operation: cree }
+  - { regle: RG-230v-hors-du-bac, operation: cree }
   - { regle: RG-brochage, operation: cree }
 ---
 
@@ -48,7 +48,7 @@ Ce qu'on cherche à obtenir, avec son critère de réussite :
 
 O6 prime sur tous les autres : un régulateur qui chauffe trop tue l'élevage plus sûrement qu'un régulateur qui ne fait rien.
 
-Ce cadrage réalise O1, O4 et O6. O2, O3 et O5 restent des objectifs du produit : les cadrages des phases suivantes les réaliseront.
+Ce cadrage réalise O1 et O4, et O6 en partie : aucune panne du réseau ne peut provoquer une surchauffe, mais en phase 1 rien de matériel ne coupe le chauffage si son relais reste collé ou si le firmware se trompe — décision `06-protection-contre-la-surchauffe`. O2, O3 et O5 restent des objectifs du produit : les cadrages des phases suivantes les réaliseront.
 
 Ce cadrage est le premier du référentiel : aucune règle, aucune décision, aucun cadrage ne le précédait — le référentiel a été consulté vide. Il part du document de cadrage v0.1 du 28/10/2026, révisé le même jour sur le matériel : un module de relais électromécaniques remplace les relais statiques et le MOSFET, un ventilateur s'ajoute, l'horloge RTC disparaît au profit de l'heure NTP seule, et l'éclairage devient un ruban LED 12 V.
 
@@ -58,11 +58,11 @@ Ce cadrage est le premier du référentiel : aucune règle, aucune décision, au
 
 Le parcours de la phase 1, sans réseau ni interface : les phases suivantes y ajouteront l'éclairage, la ventilation, la brumisation, la page web, MQTT et les alertes.
 
-1. Avant tout raccordement du 230 V, je câble le boîtier, je vérifie au multimètre que chaque relais reste ouvert carte en reset, au boot et sans firmware, et je pose le limiteur Exo Terra à 24 °C en série des câbles chauffants.
+1. Avant tout raccordement du 230 V, je câble le boîtier, je vérifie au multimètre que chaque relais reste ouvert carte en reset, au boot et sans firmware.
 2. Au premier démarrage, le régulateur part en `MAINTENANCE`, tout coupé. Je choisis le mode par la liaison série USB.
 3. En mode `ACTIF`, il tient l'air autour de 19 °C. En novembre, je passe en `HIBERNATION` : le chauffage ne protège plus que du gel. Pour nettoyer le bac, je passe en `MAINTENANCE` : tout est coupé, les mesures continuent.
 4. Une coupure de courant survient : au retour, le régulateur repart sorties coupées, reprend le mode dans lequel il tournait, et la régulation du chauffage — le Wi-Fi n'y joue aucun rôle.
-5. Quand ça se passe mal — un capteur se tait, le firmware se bloque, le relais de chauffage reste collé, le chauffage tourne sans fin —, le chauffage et la pompe se coupent ou le limiteur matériel coupe à leur place, et la LED d'état le signale.
+5. Quand ça se passe mal — un capteur se tait, le firmware se bloque, le chauffage tourne sans fin —, le chauffage et la pompe se coupent, et la LED d'état le signale. Un relais de chauffage resté collé n'est arrêté par rien en phase 1.
 
 ## Exigences
 
@@ -84,7 +84,7 @@ Chaque exigence porte la phase qui la réalise. Ce cadrage réalise celles des p
 ### Non fonctionnelles
 
 - **NF1 Autonomie** : la régulation tourne entièrement sur l'ESP32. Wi-Fi, broker ou serveur absents n'ont aucun effet sur elle. Le chauffage, le hors-gel et les protections n'ont pas besoin de l'heure : l'abandon de l'horloge RTC laisse NF1 intacte. Le Wi-Fi du domicile couvre le garage : la supervision n'a pas besoin de matériel réseau en plus. *(phase 1)*
-- **NF2 Sécurité intrinsèque** : un limiteur matériel coupe le chauffage au-delà de 24 °C, indépendamment du firmware. *(phase 1)*
+- **NF2 Sécurité intrinsèque** : un limiteur matériel coupe le chauffage au-delà de 24 °C, indépendamment du firmware. *(reportée après la phase 1 : décision `06-protection-contre-la-surchauffe`, [sskorupski/ssk-terrarium#9](https://github.com/sskorupski/ssk-terrarium/issues/9))*
 - **NF3 Fail-safe logiciel** : capteur en défaut → chauffage et brumisation coupés, alerte émise. *(phases 1, 3 et 4 : coupure du chauffage, alerte, coupure de la brumisation)*
 - **NF4 Persistance** : réglages stockés en mémoire non volatile (NVS), conservés après coupure. *(phases 1 et 2 : le mode, puis les réglages)*
 - **NF5 Heure** : l'heure vient du NTP, par le Wi-Fi de l'ESP32, sans module d'horloge. Sans réseau au démarrage, le régulateur estime l'heure à partir de la dernière heure connue, enregistrée en mémoire non volatile. Seuls l'éclairage et les cycles de ventilation dépendent de l'heure. *(phase 2)*
@@ -111,7 +111,6 @@ flowchart LR
 
     ALIM["Bloc 12 V 3,5 A"]
 
-    LIM["Thermostat Exo Terra<br/>limiteur 24 °C"]
     POMPE["Pompe 12 V<br/>+ réservoir"]
 
     SHT -- I²C --> ESP
@@ -119,7 +118,7 @@ flowchart LR
     ALIM -- 12 V, jack --> ESP
     ALIM --> BUCK -- 5 V JD-VCC --> REL
     ESP -- 3,3 V VCC + commandes --> REL
-    REL -- 230 V --> LIM --> CAB
+    REL -- 230 V --> CAB
     REL -- 12 V --> LED
     REL -- 12 V --> POMPE --> BUSE
     REL -- 5 V --> VENT
@@ -147,13 +146,13 @@ Tout ce qui est en trait plein fonctionne sans réseau. Les traits pointillés s
 | 8 | Alimentation | HN Power HNP42EU-120, 12 V 3,5 A 42 W, fiche 5,5 × 2,1, prise EU, protégée contre surcharge et court-circuit, réf. Kiwi KW-2196 ([fiche](https://www.kiwi-electronics.com/en/power-supply-12v-3-5a-42w-5-5x2-1mm-dc-plug-3740)) — polarité (centre +) à vérifier au multimètre avant de brancher la carte. Retenue plutôt que le Mean Well GST36E12-P1J pour tout commander chez Kiwi | Kiwi Electronics | 1 | 19,79 € |
 | 9 | Raccord d'alimentation | Embase jack femelle 5,5 × 2,1 à bornier, réf. Kiwi ([fiche](https://www.kiwi-electronics.com/en/terminal-block-to-2-1mm-dc-barrel-jack-female-747)), et un cordon jack mâle 5,5 × 2,1 vers la carte | Kiwi Electronics | 1 | 1,55 € |
 | 16 | Câble du capteur air | Câble STEMMA QT / Qwiic JST SH 4 broches vers prises femelles, 150 mm ([fiche](https://www.kiwi-electronics.com/en/stemma-qt-qwiic-jst-sh-4-pin-cable-with-premium-female-sockets-150mm-long-10388)), prolongé par des fils Dupont mâle/femelle 20 cm ([fiche](https://www.kiwi-electronics.com/en/premium-jumperwires-ribbon-40-wires-m-f-20cm-364)) — la KS5016 sort l'I²C sur broches mâles. Variante plus propre : câble JST SH 400 mm + adaptateur SparkFun STEMMA QT, à souder | Kiwi Electronics | 1 + 1 | 1,14 € + 2,99 € |
-| 17 | Câblage 230 V | Cordon secteur 3G 1 mm² avec fiche, porte-fusible 5 × 20 et fusible 1 A temporisé, socle de prise femelle pour brancher le limiteur, multiprise 2 prises derrière le limiteur pour les deux câbles chauffants, borniers à levier | à choisir | 1 lot | ≈ 10-15 € |
+| 17 | Câblage 230 V | Cordon secteur 3G 1 mm² avec fiche, socle de prise femelle, multiprise 2 prises pour les deux câbles chauffants, borniers à levier. Le porte-fusible 5 × 20 et son fusible 1 A temporisé sont reportés : décision `07-fusible-du-chauffage` | à choisir | 1 lot | ≈ 10-15 € |
 | 18 | Petit câblage | Diode 1N5819 ou 1N4007 aux bornes de la pompe (si non fournie), rallonge pour la fiche Molex 1,25 mm du ventilateur, fils Dupont, fil souple 12 V, câble USB-C pour programmer | à choisir | 1 lot | ≈ 5-10 € |
 | 10 | Éclairage | Ruban LED blanc 12 V, 4,8 W/m, IP54, sécable tous les 5 cm, 3000-4000 K, ≈ 90 cm, collé sous la vitre du couvercle, à l'extérieur si possible | lampe-eclairage-led.com | ≈ 1 m | ≈ 2,90 €/m |
 | 11 | Brumisation (phase 4) | Pompe de brumisation pour terrarium, membrane haute pression 12 V (5-7 bar, sous 1,5 A) avec sa diode de roue libre — une pompe « 385 » à 0,5 bar arrose sans brumiser ; 1 à 2 buses fines ; clapet anti-goutte avant les buses ; tuyau 4 mm ; réservoir 2-5 L posé plus bas que les buses ; eau de pluie filtrée ou déminéralisée | à choisir | 1 lot | 40-80 € |
-| 12 | Boîtier | Boîtier électrique IP65, borniers, presse-étoupes, fusible 230 V | à choisir | 1 | 15-20 € |
+| 12 | Boîtier | Boîtier électrique IP65, borniers, presse-étoupes | à choisir | 1 | 15-20 € |
 | 13 | Chauffage | Câbles chauffants Reptil'us HC Expert ([fiche](https://www.zoomalia.com/animalerie/cable-chauffant-pour-terrarium-reptil-us-hc-expert-p-38085.html)), silicone et fibre de verre, étanches, sans thermostat : 6 m 50 W sur la vitre arrière (6 allers-retours, ≈ 6 cm d'écart) et 4,5 m 25 W sur une vitre latérale (≈ 4 cm d'écart), soit 75 W. Collés à l'extérieur au ruban aluminium, sans jamais se croiser, sous l'isolant — les ventouses fournies ne servent pas. Le câble antigel existant est écarté : son thermostat intégré ne l'allume que vers 3-5 °C | Zoomalia | 1 + 1 | 12,99 € + 9,99 € |
-| 14 | Limiteur de sécurité | Thermostat Exo Terra 300 W Dimming & Pulse, réglé à 24 °C — non négociable | à choisir | 1 | 65 € |
+| 14 | Limiteur de sécurité | **Reporté** : décision `06-protection-contre-la-surchauffe`. Le thermostat Exo Terra 300 W Dimming & Pulse, réglé à 24 °C, n'est pas acheté | à choisir | 0 | (65 €) |
 | 15 | Isolation | Polystyrène extrudé 2-3 cm | à choisir | 1 panneau | 10-20 € |
 
 La commande Kubii (lignes 1, 3, 5 et 7) revient à environ 35 € ; la référence Kubii du ventilateur est le « Ventilateur 80x80x10.8mm » (5 V, 0,18 A, fiche Molex 1,25 mm, câble de 10 cm). Les prix sont des ordres de grandeur, à vérifier à l'achat.
@@ -172,7 +171,7 @@ Le bloc de 3,5 A laisse une marge, même au démarrage de la pompe. La carte re�
 
 ### Puissance de chauffe
 
-Estimation, à confirmer à l'usage : le bac (≈ 2,3 m² de parois) perd de l'ordre de 7 W par degré d'écart avec le garage, une fois arrière, côtés et fond isolés au polystyrène, la façade et le couvercle restant vitrés. Tenir 19 °C dans un garage à 11 °C demande donc ≈ 55-65 W, ventilation comprise : les 75 W des deux câbles laissent ≈ 15-35 % de marge en mode `ACTIF` l'hiver. Une chauffe sous-dimensionnée tournerait sans arrêt et buterait sur RG-chauffe-continue-bornee toutes les 2 heures. Le hors-gel de l'hibernation (4-6 °C dans un garage à 10-12 °C) ne demande, lui, aucune chauffe. Pour garder de la marge : isoler aussi le couvercle hors de la zone d'éclairage et couvrir la façade la nuit ; si la consigne n'est pas tenue, ajouter un câble sur la seconde vitre latérale, toujours derrière le limiteur. À la mise en service, mesurer la vitre côté intérieur, là où les escargots se posent, pour vérifier qu'aucune bande n'y est trop chaude. Le chauffage, seul en 230 V, ne passe que par son relais et le limiteur.
+Estimation, à confirmer à l'usage : le bac (≈ 2,3 m² de parois) perd de l'ordre de 7 W par degré d'écart avec le garage, une fois arrière, côtés et fond isolés au polystyrène, la façade et le couvercle restant vitrés. Tenir 19 °C dans un garage à 11 °C demande donc ≈ 55-65 W, ventilation comprise : les 75 W des deux câbles laissent ≈ 15-35 % de marge en mode `ACTIF` l'hiver. Une chauffe sous-dimensionnée tournerait sans arrêt et buterait sur RG-chauffe-continue-bornee toutes les 2 heures. Le hors-gel de l'hibernation (4-6 °C dans un garage à 10-12 °C) ne demande, lui, aucune chauffe. Pour garder de la marge : isoler aussi le couvercle hors de la zone d'éclairage et couvrir la façade la nuit ; si la consigne n'est pas tenue, ajouter un câble sur la seconde vitre latérale, sur le même relais. À la mise en service, mesurer la vitre côté intérieur, là où les escargots se posent, pour vérifier qu'aucune bande n'y est trop chaude. Le chauffage, seul en 230 V, ne passe que par son relais.
 
 ## Feuille de route
 
@@ -204,7 +203,7 @@ Le régulateur tourne sur un ESP32 (ESP32-WROOM-32, carte DevKit V1). Ce qui l'a
 
 ### ADR-commande-230v-par-relais-filaires
 
-Les sorties — chauffage en 230 V, ruban LED et pompe en 12 V, ventilateur en 5 V — sont commandées par un module de relais électromécaniques optocouplés, câblé à l'ESP32 dans un boîtier fermé avec fusible ; la pompe garde sa diode de roue libre. Aucune sortie ne passe par une prise connectée. Ce qui l'a décidé : une prise connectée rendrait la régulation dépendante du Wi-Fi, contraire à RG-regulation-sans-reseau ; entre relais statiques et module électromécanique, l'utilisateur a choisi le module pour son prix et la simplicité d'un seul module pour toutes les sorties, sous les garde-fous de RG-relais-coupes-sans-commande — décision `02-commande-230v`.
+Les sorties — chauffage en 230 V, ruban LED et pompe en 12 V, ventilateur en 5 V — sont commandées par un module de relais électromécaniques optocouplés, câblé à l'ESP32 dans un boîtier fermé ; la pompe garde sa diode de roue libre. Aucune sortie ne passe par une prise connectée. Ce qui l'a décidé : une prise connectée rendrait la régulation dépendante du Wi-Fi, contraire à RG-regulation-sans-reseau ; entre relais statiques et module électromécanique, l'utilisateur a choisi le module pour son prix et la simplicité d'un seul module pour toutes les sorties, sous les garde-fous de RG-relais-coupes-sans-commande — décision `02-commande-230v`.
 
 ### ADR-capteur-air-sht45
 
@@ -264,7 +263,7 @@ Une impulsion de brumisation dure au plus 30 secondes, quels que soient les rég
 
 ### RG-chauffe-continue-bornee
 
-Le chauffage ne reste pas allumé plus de 2 heures d'affilée : au-delà, il est coupé pendant 15 minutes, et le dépassement est signalé par la LED d'état et sur la liaison série ; l'alerte sur téléphone s'y ajoutera avec sa phase. Passé ces 15 minutes, le chauffage reprend sur la consigne du mode, sans intervention : un verrou posé la nuit laisserait le bac refroidir jusqu'au matin, hors-gel compris, alors que le limiteur à 24 °C couvre déjà la surchauffe (RG-limiteur-materiel). Des coupures qui se répètent signalent une chauffe sous-dimensionnée ou un relais collé. Ce que la règle protège : une sonde décrochée ou un câble défaillant ne fait pas chauffer sans fin.
+Le chauffage ne reste pas allumé plus de 2 heures d'affilée : au-delà, il est coupé pendant 15 minutes, et le dépassement est signalé par la LED d'état et sur la liaison série ; l'alerte sur téléphone s'y ajoutera avec sa phase. Passé ces 15 minutes, le chauffage reprend sur la consigne du mode, sans intervention : un verrou posé la nuit laisserait le bac refroidir jusqu'au matin, hors-gel compris. La règle borne une durée, non une température : elle n'arrête pas une surchauffe, que rien de matériel ne couvre en phase 1 (décision `06-protection-contre-la-surchauffe`). Des coupures qui se répètent signalent une chauffe sous-dimensionnée ou un relais collé. Ce que la règle protège : une sonde décrochée ou un câble défaillant ne fait pas chauffer sans fin.
 
 ### RG-chien-de-garde
 
@@ -280,9 +279,9 @@ Une broche que l'ESP32 ne pilote pas — reset, boot, plantage — laisse chaque
 
 Ce que la règle protège : un module électromécanique, contrairement à un MOSFET tenu par sa résistance de rappel, peut coller sur une broche flottante ou une logique trop faible ; rien ne chauffe ni ne brumise tant que le firmware n'a pas décidé.
 
-### RG-limiteur-materiel
+### RG-230v-hors-du-bac
 
-Un thermostat indépendant du firmware, réglé à 24 °C, est câblé en série entre le relais de chauffage et les câbles chauffants. Il coupe le chauffage au-delà de 24 °C même si le firmware est bloqué relais fermé, et reste en place quelle que soit la version du firmware. Aucun élément sous 230 V n'est dans le bac ni contre lui : les câbles chauffants sont à l'extérieur, contre les vitres et sous l'isolant. N'entrent dans le bac que les capteurs et des éléments en très basse tension — le ventilateur 5 V, fixé dans le couvercle.
+Aucun élément sous 230 V n'est dans le bac ni contre lui : les câbles chauffants sont à l'extérieur, contre les vitres et sous l'isolant. N'entrent dans le bac que les capteurs et des éléments en très basse tension — le ventilateur 5 V, fixé dans le couvercle. Ce que la règle protège : ni l'eau du bac ni une main qui y travaille n'approchent le 230 V.
 
 ### RG-brochage
 
