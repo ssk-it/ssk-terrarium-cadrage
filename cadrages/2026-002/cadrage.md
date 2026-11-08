@@ -101,9 +101,13 @@ Restent à cadrer, chacun dans sa piste :
 - la page web locale de supervision (piste #10) ; le portail de ce cadrage ne sert qu'à la configuration réseau ;
 - les alertes ntfy (piste #14), l'OTA (piste #15), le NTP (piste #8), l'historique (piste #18).
 
-## Questions ouvertes
+## Ce qui a été appris en réalisant
 
-- La chaîne du certificat que Traefik présentera : un certificat RSA de Let's Encrypt remonte aujourd'hui à ISRG Root X1, que le firmware embarque. Le vérifier sur le certificat réellement servi, et le consigner ici avant la fusion.
+Relevé de l'extérieur le 2026-11-08, une fois le courtier en place (ssk-it/ssk-it-infra#35, #36 et #37) :
+
+- **La chaîne servie ne remonte plus directement à ISRG Root X1** : `mq.ssk-it.fr` (RSA 2048) ← Let's Encrypt YR2 ← ISRG Root YR, contresignée par ISRG Root X1. X1 seule la valide encore, mais par cette contresignature, que Let's Encrypt cessera de servir un jour. Le firmware embarque donc X1 et Root YR.
+- **Le Load Balancer d'OVH coupe une connexion inactive à 50 s** (mesuré : un keepalive de 120 s est coupé, 45 et 30 s tiennent). Le firmware envoie son keepalive toutes les 30 s.
+- **Le sous-domaine `mq` et le port 443 sont un choix du propriétaire**, fait en réalisant ssk-it/ssk-it-infra#34 : il évite d'ajouter un port au Load Balancer de la production de Skoppt (décision `03-hebergement-du-courtier`).
 
 ## Énoncés
 
@@ -113,7 +117,7 @@ Le Wi-Fi et le courtier se configurent par un portail captif écrit dans le firm
 
 ### ADR-supervision-par-mqtt-tls
 
-Le régulateur publie son état et reçoit ses commandes en MQTT, chiffré par TLS, avec PubSubClient et le `WiFiClientSecure` du cœur Arduino ; il vérifie le certificat du courtier contre la racine ISRG Root X1, embarquée dans le firmware. Ce qui l'a décidé : MQTT porte à la fois la publication et les commandes sur une connexion que le régulateur ouvre lui-même, sans service à écrire côté serveur, et le chiffrement est indispensable dès lors que le courtier est joint par Internet — décision `02-protocole-de-publication`.
+Le régulateur publie son état et reçoit ses commandes en MQTT, chiffré par TLS, avec PubSubClient et le `WiFiClientSecure` du cœur Arduino ; il vérifie le certificat du courtier, et son nom, contre les racines ISRG Root X1 et ISRG Root YR de Let's Encrypt, embarquées dans le firmware. Ce qui l'a décidé : MQTT porte à la fois la publication et les commandes sur une connexion que le régulateur ouvre lui-même, sans service à écrire côté serveur, et le chiffrement est indispensable dès lors que le courtier est joint par Internet — décision `02-protocole-de-publication`.
 
 ### ADR-courtier-mosquitto-sur-ssk-it-01
 
