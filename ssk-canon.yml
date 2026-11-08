@@ -13,6 +13,7 @@ projet:
 # Les dépôts de code que ce projet réalise.
 depots_code:
   - { repo: sskorupski/ssk-terrarium, role: "Firmware ESP32 : PlatformIO, framework Arduino, C++17" }
+  - { repo: ssk-it/ssk-it-infra, role: "Cluster ssk-it-01 : le courtier MQTT de la supervision" }
 
 tags_liens:
   - carte_trello
