@@ -107,6 +107,8 @@ Relevé de l'extérieur le 2026-11-08, une fois le courtier en place (ssk-it/ssk
 
 - **La chaîne servie ne remonte plus directement à ISRG Root X1** : `mq.ssk-it.fr` (RSA 2048) ← Let's Encrypt YR2 ← ISRG Root YR, contresignée par ISRG Root X1. X1 seule la valide encore, mais par cette contresignature, que Let's Encrypt cessera de servir un jour. Le firmware embarque donc X1 et Root YR.
 - **Le Load Balancer d'OVH coupe une connexion inactive à 50 s** (mesuré : un keepalive de 120 s est coupé, 45 et 30 s tiennent). Le firmware envoie son keepalive toutes les 30 s.
+- **Éprouvé sur la carte le 2026-11-08**, firmware `phase-1.1-4-g1586284` : l'état arrive toutes les 30 s ; `{"consigne": 30}` est refusé (`hors bornes`), `{"consigne": 19.5}` appliqué et conservé après un redémarrage ; `HIBERNATION` puis `MAINTENANCE` appliqués, chauffage resté coupé ; une commande publiée en retenu est ignorée à la reconnexion suivante.
+- **Au premier essai, la carte n'a pas rejoint le Wi-Fi dans la minute, sans dire pourquoi** : le firmware n'écrivait que la réussite. Après le téléversement suivant, elle l'a rejoint ; la cause du premier échec n'a pas été établie. Le firmware écrit désormais la raison d'un échec, une fois par cause (réseau introuvable ou en 5 GHz seulement, mot de passe refusé, sécurité non prise en charge).
 - **Le sous-domaine `mq` et le port 443 sont un choix du propriétaire**, fait en réalisant ssk-it/ssk-it-infra#34 : il évite d'ajouter un port au Load Balancer de la production de Skoppt (décision `03-hebergement-du-courtier`).
 
 ## Énoncés
