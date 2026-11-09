@@ -2,7 +2,9 @@
 id: 2026-006
 titre: Dire pourquoi la mesure de l'air est rejetée, et permettre de lever la mise en sécurité d'une sonde
 domaines: [securite, supervision]
-liens: []
+liens:
+  - { tag: issue_github, nom: 'ssk-terrarium#20', url: 'https://github.com/sskorupski/ssk-terrarium/issues/20' }
+  - { tag: document, nom: 'sterrarium-cadrage#2026-003', url: 'https://ssk-canon.s3-website.fr-par.scw.cloud/sskorupski/sterrarium-cadrage/cadrages/2026-003' }
 impacts:
   - { regle: RG-capteur-en-defaut, operation: modifie }
   - { regle: RG-topics-mqtt, operation: modifie }
