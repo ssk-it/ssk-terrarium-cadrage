@@ -4,6 +4,8 @@ titre: Couper le chauffage quand le substrat atteint 24 °C
 domaines: [regulation, securite, supervision]
 liens:
   - { tag: issue_github, nom: 'ssk-terrarium#9', url: 'https://github.com/sskorupski/ssk-terrarium/issues/9' }
+  - { tag: issue_github, nom: 'ssk-terrarium#18', url: 'https://github.com/sskorupski/ssk-terrarium/issues/18' }
+  - { tag: pull_request, nom: 'ssk-terrarium#19', url: 'https://github.com/sskorupski/ssk-terrarium/pull/19' }
 impacts:
   - { regle: RG-coupure-par-le-substrat, operation: cree }
   - { regle: RG-mesures-periodiques, operation: modifie }
