@@ -7,7 +7,7 @@ option_retenue: regulateur-demande-appliquer-signe
 
 ## Description
 
-Deux gestes sont à déclencher. Le régulateur doit tirer une clé et publier une demande. Quelqu'un doit ensuite la signer avec la clé de l'autorité. Cette clé ne doit pas être en clair sur le cluster, ce qu'a écarté `02-autorite-de-certification` de 2026-011. Elle vit donc dans le trousseau du Mac, qui n'est pas toujours allumé, et elle ne se déverrouille qu'à la main. Le régulateur n'a d'heure que par NTP (ADR-heure-par-ntp). `appliquer.sh` signale déjà les certificats qui expirent dans moins de 90 jours.
+Deux gestes sont à déclencher. Le régulateur doit tirer une clé et publier une demande. Quelqu'un doit ensuite la signer avec la clé de l'autorité. Cette clé ne doit pas être en clair sur le cluster, ce qu'a écarté `02-autorite-de-certification` de 2026-011. Elle vit donc dans le trousseau, qu'on n'ouvre que depuis un Mac, et un Mac n'est pas toujours allumé, et elle ne se déverrouille qu'à la main. Le régulateur n'a d'heure que par NTP (ADR-heure-par-ntp). `appliquer.sh` signale déjà les certificats qui expirent dans moins de 90 jours.
 
 ## Options
 

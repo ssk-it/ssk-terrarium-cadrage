@@ -16,7 +16,7 @@ Tant que son certificat est valide, le régulateur joint le courtier : c'est la 
 On garde la remise de 2026-011, au garage, par le portail, à chaque échéance.
 
 **Pour** — rien à écrire de plus ; aucune clé sur le réseau.
-**Contre** — il faut se déplacer, et un oubli coupe la supervision ; un geste fait tous les cinq ans ne s'éprouve pas. C'est précisément ce que 2026-011 renvoyait à ce cadrage.
+**Contre** — il faut se déplacer, et un oubli coupe la supervision ; un passage au garage chaque année finit par s'oublier. C'est précisément ce que 2026-011 renvoyait à ce cadrage.
 
 ### cle-transportee-par-mqtt
 

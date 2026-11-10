@@ -18,11 +18,11 @@ impacts:
 
 ## Objectif
 
-Depuis [ssk-terrarium-cadrage#2026-011](https://ssk-canon.s3-website.fr-par.scw.cloud/ssk-it/ssk-terrarium-cadrage/cadrages/2026-011), Traefik exige un certificat client sur `mq.ssk-it.fr`. Le régulateur reçoit le sien par son portail de configuration, au garage, le Mac connecté au réseau `ssk-terrarium-XXXX`. Rien d'autre ne le renouvelle. Quand ce certificat expire, la supervision s'arrête jusqu'au prochain passage au garage. 2026-011 l'a accepté pour un temps : il a renvoyé le renouvellement à un cadrage à part, et choisi cinq ans de validité pour que la remise soit rare (décision `04-duree-de-validite`). Ce cadrage est ce cadrage à part.
+Depuis [ssk-terrarium-cadrage#2026-011](https://ssk-canon.s3-website.fr-par.scw.cloud/ssk-it/ssk-terrarium-cadrage/cadrages/2026-011), Traefik exige un certificat client sur `mq.ssk-it.fr`. Le régulateur reçoit le sien par son portail de configuration, au garage, le Mac connecté au réseau `ssk-terrarium-XXXX`. Rien d'autre ne le renouvelle. Quand ce certificat expire, la supervision s'arrête jusqu'au prochain passage au garage. 2026-011 l'a accepté pour un temps : il a renvoyé le renouvellement à un cadrage à part, et retenu un an de validité (décision `04-duree-de-validite`), la durée que ce renouvellement aura à tenir. Ce cadrage est ce cadrage à part.
 
 Le problème a trois faces :
 
-- une remise qu'on fait tous les cinq ans ne s'éprouve jamais, et l'on aura oublié le geste quand l'expiration viendra ;
+- une remise au garage chaque année, c'est un passage qu'on oubliera un jour, et la supervision s'arrêtera à chaque oubli ;
 - le régulateur ne sait pas ouvrir son portail quand seul son certificat est en cause : 2026-011 compte sur `WIFI CONFIGURER`, donc sur l'USB, donc sur un boîtier rouvert ;
 - l'autorité vaut dix ans, et rien ne dit comment la relever, ni comment la refaire si sa clé est perdue ou volée. Traefik ne lit pas de liste de révocation, et c'est 2026-011 qui le dit.
 
@@ -45,10 +45,10 @@ Consulté le 11 novembre 2026, sur `origin/main` (3905479) et sur les branches d
 
 - **2026-011 / `03-remise-au-regulateur`** a écarté `par-mqtt` pour la première remise seulement : un régulateur sans certificat ne joint pas le courtier. La décision la désignait comme la voie du renouvellement. Ce cadrage la reprend. La première remise reste `script-vers-le-portail`, et le portail reste le secours.
 - **2026-011 / `02-autorite-de-certification`** a écarté `autorite-dans-cert-manager`, parce que la clé de l'autorité serait en clair dans un Secret du cluster. Aucun service du cluster ne signe donc de certificat, et ce cadrage ne remet pas ce point en cause. Le même motif écarte ici toute voie où une clé passerait par un tiers qui n'en a pas besoin, courtier compris.
-- **2026-011 / `04-duree-de-validite`** a retenu cinq ans, « compatible avec un renouvellement fait à la main d'ici le cadrage qui l'automatisera ». Ce cadrage retire ce motif. Sa décision `07-duree-de-validite` choisit une nouvelle durée, qui s'applique dès sa livraison. 2026-011 n'est pas réécrit : il garde ce qui a été décidé pour la première remise.
+- **2026-011 / `04-duree-de-validite`** a d'abord retenu cinq ans, « compatible avec un renouvellement fait à la main d'ici le cadrage qui l'automatisera ». Elle a été révisée sur sa branche, avant sa fusion, quand ce cadrage-ci a été écrit : elle retient maintenant un an pour les certificats et dix ans pour l'autorité, pour que la voie de renouvellement serve chaque année. Ce cadrage s'y conforme, sans rouvrir la question.
 - **RG-courtier-authentifie**, dans la version de 2026-011, met les clés des clients dans `ssk-it-infra`, dans le régulateur et dans le trousseau du Mac. Elle ne connaît que deux comptes sur `mq.ssk-it.fr`, `terrarium` et `proprietaire`. Ce cadrage la modifie : la clé du régulateur naît sur le régulateur, et un compte `certificats` s'ajoute.
 - **RG-configuration-wifi-sur-place**, dans la version de 2026-011, n'ouvre le portail que sans Wi-Fi enregistré, sur un Wi-Fi injoignable, ou sur `WIFI CONFIGURER`. Ce cadrage la modifie pour qu'il s'ouvre aussi sans certificat valide (R5).
-- **ADR-certificats-clients-par-autorite-propre**, que crée 2026-011, est modifiée : la clé du régulateur ne naît plus dans `ssk-it-infra`, la clé de l'autorité ne quitte pas le trousseau du Mac, et une relève à deux autorités est prévue.
+- **ADR-certificats-clients-par-autorite-propre**, que crée 2026-011, est modifiée : la clé du régulateur ne naît plus dans `ssk-it-infra`, la clé de l'autorité est gardée dans le trousseau iCloud, et une relève à deux autorités est prévue.
 - **RG-topics-mqtt** n'est que touchée. Les sujets du renouvellement vivent dans leur propre règle, RG-renouvellement-du-certificat, sous `certificat`, hors de `cmd/`. Ainsi, ce cadrage ne recouvre pas [ssk-terrarium-cadrage#2026-008](https://ssk-canon.s3-website.fr-par.scw.cloud/ssk-it/ssk-terrarium-cadrage/cadrages/2026-008), qui modifie cette règle sur sa branche. Le motif de RG-topics-mqtt vaut ici aussi : une demande de renouvellement ancienne, restée sur le courtier, n'est pas appliquée.
 - **RG-sorties-coupees-au-demarrage** et **RG-chien-de-garde** : tout redémarrage coupe d'abord les sorties. Le régulateur adopte donc un certificat neuf sans redémarrer.
 - **ADR-heure-par-ntp** : le régulateur n'a d'heure que par NTP. Il ne juge une échéance que s'il connaît l'heure. Sans elle, c'est `ssk-it-infra` qui demande le renouvellement.
@@ -92,7 +92,7 @@ Consulté le 11 novembre 2026, sur `origin/main` (3905479) et sur les branches d
   Le tampon MQTT du régulateur fait déjà 1 280 octets (`lib/mqtt/mqtt_link.cpp`). Une demande et un certificat P-256 en PEM y tiennent.
 - **ssk-it/ssk-it-infra** :
   - le compte `certificats` et ses droits dans Mosquitto, avec son certificat, son mot de passe et son trousseau ;
-  - la clé de l'autorité, gardée dans le trousseau du Mac et nulle part en clair ailleurs ;
+  - la clé de l'autorité, gardée dans le trousseau iCloud et nulle part en clair ailleurs. Le chantier vérifie qu'un script peut y écrire un élément synchronisé : `security` n'écrit que dans le trousseau de session, qui ne se synchronise pas (décision `07-garde-de-la-cle-de-l-autorite`) ;
   - dans `appliquer.sh`, l'échéance lue sur `certificat`, la signature d'une demande après confirmation, puis le retrait du certificat retenu ;
   - le renouvellement des certificats du Mac ;
   - la relève de l'autorité, avec deux autorités admises par la `TLSOption mqtt` le temps de la relève ;
@@ -106,7 +106,7 @@ Ordre :
 3. Puis le firmware, qui sait demander, essayer et revenir.
 4. Puis `appliquer.sh`, qui signe.
 
-Le premier renouvellement éprouve tout le chantier : les certificats de cinq ans remis par 2026-011 sont renouvelés sur `certificat/demander` dès la livraison, à la durée de `07-duree-de-validite`. On éprouve aussi le retour arrière, une fois, avec un certificat signé par une autre autorité.
+Le premier renouvellement éprouve tout le chantier : un renouvellement est forcé sur `certificat/demander` dès la livraison, sans attendre l'échéance du certificat remis par 2026-011. On éprouve aussi le retour arrière, une fois, avec un certificat signé par une autre autorité.
 
 ## Énoncés
 
@@ -195,11 +195,11 @@ Ce que la règle protège :
 
 Les clients de `mq.ssk-it.fr` présentent un certificat signé par une autorité propre au courtier, et non par une autorité publique. Il y a un certificat par compte : `terrarium`, `proprietaire` et `certificats`. Tous sont en ECDSA P-256.
 
-**L'autorité.** `clusters/ssk-it-01/sceller-secrets.sh`, dans `ssk-it/ssk-it-infra`, fabrique l'autorité. Sa clé n'existe que dans le trousseau du Mac. Elle n'est jamais en clair sur le cluster, et sert à `appliquer.sh` pour signer, après confirmation.
+**L'autorité.** `clusters/ssk-it-01/sceller-secrets.sh`, dans `ssk-it/ssk-it-infra`, fabrique l'autorité. Sa clé n'existe que dans le trousseau iCloud du propriétaire, chiffré de bout en bout, qui la garde au-delà de la perte d'un Mac. Elle n'est jamais en clair sur le cluster ni dans un dépôt, et sert à `appliquer.sh` pour signer, après confirmation.
 
 **Les certificats.** Ceux du Mac sont fabriqués et renouvelés dans le trousseau. Le premier certificat du régulateur est fabriqué et scellé par `sceller-secrets.sh`, puis remis par le portail. Ses certificats suivants naissent d'une clé qu'il tire lui-même et d'une demande de signature publiée par MQTT (RG-renouvellement-du-certificat) : cette clé ne quitte jamais l'ESP32.
 
-**Les durées.** Les certificats valent un an et l'autorité dix ans. Aucun certificat n'est signé pour durer au-delà de l'autorité qui le signe.
+**Les durées.** Les certificats valent un an et l'autorité dix ans, comme le retient la décision `04-duree-de-validite` de 2026-011. Aucun certificat n'est signé pour durer au-delà de l'autorité qui le signe.
 
 **Ce que reçoit Traefik.** Il ne reçoit que le certificat public de l'autorité. Le temps d'une relève, il reçoit celui de l'ancienne et celui de la nouvelle. L'ancienne est retirée dès que chaque client a adopté un certificat signé par la nouvelle.
 
@@ -208,4 +208,5 @@ Ce qui l'a décidé :
 - une autorité publique ne garantit pas de signer un certificat client, et ne sait pas qui doit joindre ce courtier ; une autorité propre n'admet que les clients qu'on lui a fait signer, avec la durée qu'on choisit (décision `02-autorite-de-certification` de 2026-011) ;
 - une clé tirée sur le régulateur ne circule jamais, pas même par le courtier (décision `01-voie-du-certificat-neuf`) ;
 - deux autorités admises ensemble relèvent l'autorité sans coupure (décision `06-releve-de-l-autorite`) ;
-- un renouvellement éprouvé chaque année ne surprend pas à l'échéance (décision `07-duree-de-validite`).
+- un renouvellement éprouvé chaque année ne surprend pas à l'échéance (décision `04-duree-de-validite` de 2026-011) ;
+- la clé de l'autorité doit survivre à la perte d'un Mac, sans jamais passer par le cluster (décision `07-garde-de-la-cle-de-l-autorite`).
