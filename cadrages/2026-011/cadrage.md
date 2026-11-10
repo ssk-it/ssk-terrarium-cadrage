@@ -64,7 +64,7 @@ Consulté le 10 novembre 2026 sur `origin/main` (8c2a222) et les branches de cad
 
 ## Hors périmètre
 
-- **Le renouvellement des certificats** — par MQTT, sur un sujet réservé à un compte dédié, ou autrement. Il fera l'objet d'un cadrage à part. D'ici là, un certificat se renouvelle comme il s'installe (étapes 3 et 4), et sa durée de validité (décision `04-duree-de-validite`) est choisie pour que ce soit rare.
+- **Le renouvellement des certificats** — par MQTT, sur un sujet réservé à un compte dédié, ou autrement. Il fera l'objet d'un cadrage à part. Il est cadré dans [ssk-terrarium-cadrage#2026-012](https://ssk-canon.s3-website.fr-par.scw.cloud/ssk-it/ssk-terrarium-cadrage/cadrages/2026-012). D'ici là, un certificat se renouvelle comme il s'installe (étapes 3 et 4). Sa durée de validité, un an (décision `04-duree-de-validite`), est celle que ce renouvellement aura à tenir.
 - **`mq-ws.ssk-it.fr`**, par lequel sterrarium joint le courtier en WebSocket : il reste ouvert aux scanners. Un navigateur gère mal un certificat client, et cette entrée sert l'application web. Un adaptateur MQTT natif de sterrarium, s'il voit le jour, passerait par `mq.ssk-it.fr` et devrait présenter un certificat.
 - **L'historique** (Telegraf) se connecte au courtier dans le cluster, sur l'écouteur 1883, sans passer par Traefik : il n'est pas touché.
 
