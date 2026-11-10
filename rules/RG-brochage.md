@@ -3,7 +3,7 @@ id: RG-brochage
 fonctionnalites: [boitier-de-commande]
 statut: actif
 cree_par: 2026-001
-modifie_par: []
+modifie_par: [2026-007]
 ---
 
 Le brochage de l'ESP32 est le suivant :
@@ -13,6 +13,7 @@ Le brochage de l'ESP32 est le suivant :
 | I²C SDA (SHT45) | 21 | |
 | I²C SCL | 22 | |
 | 1-Wire DS18B20 | 4 | Pull-up 4,7 kΩ vers 3,3 V |
+| Données DHT11 (KY-015) | 13 | Module alimenté en 3,3 V ; résistance de tirage du module |
 | Relais chauffage | 26 | Coupé au démarrage |
 | Relais LED | 27 | Coupé au démarrage |
 | Relais pompe | 25 | Coupé au démarrage |
