@@ -4,7 +4,10 @@ titre: Un certificat client exigé sur mq.ssk-it.fr, pour que seuls les clients 
 domaines: [supervision]
 liens:
   - { tag: pull_request, nom: 'ssk-it-infra#44', url: 'https://github.com/ssk-it/ssk-it-infra/pull/44' }
+  - { tag: pull_request, nom: 'ssk-terrarium-cadrage#37', url: 'https://github.com/ssk-it/ssk-terrarium-cadrage/pull/37' }
   - { tag: pull_request, nom: 'ssk-it-infra#47', url: 'https://github.com/ssk-it/ssk-it-infra/pull/47' }
+  - { tag: issue_github, nom: 'ssk-terrarium#26', url: 'https://github.com/sskorupski/ssk-terrarium/issues/26' }
+  - { tag: issue_github, nom: 'ssk-it-infra#48', url: 'https://github.com/ssk-it/ssk-it-infra/issues/48' }
 impacts:
   - { adr: ADR-certificats-clients-par-autorite-propre, operation: cree }
   - { adr: ADR-supervision-par-mqtt-tls, operation: modifie }
