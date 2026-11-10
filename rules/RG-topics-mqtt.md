@@ -3,14 +3,14 @@ id: RG-topics-mqtt
 fonctionnalites: [mqtt, modes, reglages]
 statut: actif
 cree_par: 2026-002
-modifie_par: [2026-003, 2026-004]
+modifie_par: [2026-003, 2026-004, 2026-005]
 ---
 
 Le régulateur publie et reçoit sous le préfixe `ssk-terrarium/<id>/`, où `<id>` est l'adresse MAC du régulateur en hexadécimal, affichée sur la liaison série :
 
 | Sujet | Sens | Contenu |
 | --- | --- | --- |
-| `state` | publié, retenu, toutes les 30 s | JSON : mesures de l'air et du substrat (`null` si invalides), état de chaque sortie, mode, consigne, hystérésis, plages, fuseau, heure connue ou non, en plage ou non, défaut capteur, temps depuis le démarrage, version du firmware, et les bornes des réglages (`bornes`) |
+| `state` | publié, retenu, toutes les 30 s | JSON : mesures de l'air et du substrat (`null` si invalides), état de chaque sortie, mode, consigne, hystérésis, plages, fuseau, heure connue ou non, en plage ou non, défaut capteur, coupure par le substrat ou non (`coupure_substrat`), temps depuis le démarrage, version du firmware, et les bornes des réglages (`bornes`) |
 | `event` | publié | JSON : changement de mode, réglage accepté ou refusé avec sa raison, démarrage |
 | `status` | publié, retenu | `en-ligne` à la connexion, `hors-ligne` comme dernière volonté |
 | `cmd/mode` | reçu | `ACTIF`, `PLAGES`, `HIBERNATION` ou `MAINTENANCE` |
