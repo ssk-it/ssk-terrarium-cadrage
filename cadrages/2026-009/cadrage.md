@@ -8,6 +8,11 @@ liens:
   - { tag: document, nom: 'ssk-terrarium-cadrage#2026-002', url: 'https://ssk-canon.s3-website.fr-par.scw.cloud/ssk-it/ssk-terrarium-cadrage/cadrages/2026-002' }
   - { tag: document, nom: 'ssk-terrarium-cadrage#2026-006', url: 'https://ssk-canon.s3-website.fr-par.scw.cloud/ssk-it/ssk-terrarium-cadrage/cadrages/2026-006' }
   - { tag: document, nom: 'ssk-terrarium-cadrage#2026-007', url: 'https://ssk-canon.s3-website.fr-par.scw.cloud/ssk-it/ssk-terrarium-cadrage/cadrages/2026-007' }
+  - { tag: document, nom: 'sterrarium-cadrage#2026-006', url: 'https://ssk-canon.s3-website.fr-par.scw.cloud/sskorupski/sterrarium-cadrage/cadrages/2026-006' }
+  - { tag: pull_request, nom: 'sterrarium-cadrage#13', url: 'https://github.com/sskorupski/sterrarium-cadrage/pull/13' }
+  - { tag: issue_github, nom: 'ssk-terrarium#28', url: 'https://github.com/sskorupski/ssk-terrarium/issues/28' }
+  - { tag: issue_github, nom: 'ssk-it-infra#49', url: 'https://github.com/ssk-it/ssk-it-infra/issues/49' }
+  - { tag: issue_github, nom: 'sterrarium#18', url: 'https://github.com/sskorupski/sterrarium/issues/18' }
 impacts:
   - { regle: RG-alertes-sur-telephone, operation: cree }
   - { regle: RG-reglage-des-alertes, operation: cree }
@@ -44,7 +49,7 @@ Ce qu'on cherche :
 - Le firmware n'envoie aucun événement de démarrage sur `event`, contrairement à ce que dit RG-topics-mqtt, et ne publie pas la cause d'un redémarrage. « Redémarrage inattendu » (F9) ne se distingue donc pas d'un redémarrage voulu : l'alerte dit qu'il a redémarré, sans dire pourquoi.
 - `lib/alerts` existe dans le firmware, mais ne contient que des fonctions vides (« TODO phase 3 ntfy »), appelées depuis `src/main.cpp`. Ce cadrage les rend inutiles.
 - Les décisions `02-protocole-de-publication` et `03-hebergement-du-courtier` de 2026-002 ont retenu un courtier Mosquitto seul sur ssk-it-01, « sans rien y ajouter que le courtier lui-même ». Le dépôt ssk-it-infra porte pourtant depuis un historique, Telegraf et VictoriaMetrics, gardé cinq ans (ssk-it-infra `f156d56`), sans qu'aucun cadrage l'ait décidé : la piste [#18](https://github.com/ssk-it/ssk-terrarium-cadrage/issues/18) est restée ouverte. Ce cadrage s'appuie sur cet historique tel qu'il est déployé, et le dit, sans le cadrer à la place de la piste #18.
-- Côté application, [sterrarium-cadrage#2026-001](https://ssk-canon.s3-website.fr-par.scw.cloud/sskorupski/sterrarium-cadrage/cadrages/2026-001) range les alertes hors périmètre. L'écran de réglage des alertes se cadre dans sterrarium-cadrage, à partir du contrat que ce cadrage fixe.
+- Côté application, [sterrarium-cadrage#2026-001](https://ssk-canon.s3-website.fr-par.scw.cloud/sskorupski/sterrarium-cadrage/cadrages/2026-001) range les alertes hors périmètre. L'écran de réglage des alertes est cadré dans [sterrarium-cadrage#2026-006](https://ssk-canon.s3-website.fr-par.scw.cloud/sskorupski/sterrarium-cadrage/cadrages/2026-006), à partir du contrat que ce cadrage fixe.
 - Les cadrages en cours 2026-008 (chauffe de la SHT45) et 2026-010 (mise à jour à distance) modifient eux aussi RG-topics-mqtt. Celui qui se livre en second reprend l'énoncé de l'autre. Ce cadrage part de l'énoncé de `main` après la livraison de 2026-007.
 
 ## Parcours utilisateur
@@ -64,7 +69,7 @@ Ce qu'on cherche :
 
 Le téléphone du propriétaire reçoit une alerte quand le terrarium demande son attention, application sterrarium fermée et téléphone en veille. L'alerte part de la supervision, sur le cluster ssk-it-01, jamais du régulateur (ADR-alertes-par-la-supervision). Elle se déduit de l'état publié par le régulateur toutes les 30 s (RG-topics-mqtt), tel que l'historique le garde. Rien n'en revient vers le régulateur (RG-regulation-sans-reseau).
 
-Chaque alerte nomme le régulateur concerné. Elle part si elle est activée, avec les seuils et le délai que publie le dernier état reçu (RG-reglage-des-alertes) :
+Chaque alerte nomme le régulateur concerné. Elle part si elle est activée, avec les seuils et le délai que publie le dernier état reçu (RG-reglage-des-alertes). Un régulateur qui ne publie aucun réglage d'alertes, avec un firmware antérieur à ce cadrage, se voit appliquer les valeurs par défaut. Les alertes sont :
 
 - **Silence** : aucun état reçu depuis le délai réglé, 90 s par défaut, soit trois publications manquées. Régulateur hors tension, Wi-Fi coupé, courtier ou historique en panne : la supervision ne distingue pas ces causes, et l'alerte ne prétend pas trancher. Le réglage appliqué est celui du dernier état reçu.
 - **Défaut capteur** : `defaut_capteur` vrai. Aucune sonde intérieure n'est acceptée depuis 2 minutes, et le chauffage et la pompe sont coupés (RG-capteur-en-defaut).
