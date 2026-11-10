@@ -1,6 +1,6 @@
 ---
 id: RG-sorties-par-mode
-fonctionnalites: [modes, chauffage, brumisation, eclairage]
+fonctionnalites: [modes, chauffage, brumisation, eclairage, ventilation]
 statut: actif
 cree_par: 2026-001
 modifie_par: [2026-003, 2026-005]
