@@ -5,6 +5,7 @@ domaines: [materiel, regulation, securite, supervision]
 liens:
   - { tag: issue_github, nom: 'ssk-terrarium#22', url: 'https://github.com/sskorupski/ssk-terrarium/issues/22' }
   - { tag: issue_github, nom: 'sterrarium#15', url: 'https://github.com/sskorupski/sterrarium/issues/15' }
+  - { tag: pull_request, nom: 'ssk-terrarium#23', url: 'https://github.com/sskorupski/ssk-terrarium/pull/23' }
   - { tag: document, nom: 'ssk-terrarium-cadrage#2026-006', url: 'https://ssk-canon.s3-website.fr-par.scw.cloud/ssk-it/ssk-terrarium-cadrage/cadrages/2026-006' }
 impacts:
   - { regle: RG-sondes-d-air, operation: cree }
