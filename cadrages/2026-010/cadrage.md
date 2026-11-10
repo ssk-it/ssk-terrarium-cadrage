@@ -6,6 +6,9 @@ liens:
   - { tag: piste, nom: '#15', url: 'https://github.com/ssk-it/ssk-terrarium-cadrage/issues/15' }
   - { tag: document, nom: 'ssk-terrarium-cadrage#2026-008', url: 'https://ssk-canon.s3-website.fr-par.scw.cloud/ssk-it/ssk-terrarium-cadrage/cadrages/2026-008' }
   - { tag: document, nom: 'skaron-cadrage#2026-002', url: 'https://ssk-canon.s3-website.fr-par.scw.cloud/ssk-it/skaron-cadrage/cadrages/2026-002' }
+  - { tag: issue_github, nom: 'ssk-terrarium#27', url: 'https://github.com/sskorupski/ssk-terrarium/issues/27' }
+  - { tag: issue_github, nom: 'sterrarium#17', url: 'https://github.com/sskorupski/sterrarium/issues/17' }
+  - { tag: document, nom: 'sterrarium-cadrage#2026-005', url: 'https://ssk-canon.s3-website.fr-par.scw.cloud/sskorupski/sterrarium-cadrage/cadrages/2026-005' }
 impacts:
   - { regle: RG-mise-a-jour-a-distance, operation: cree }
   - { regle: RG-mise-a-jour-refusee-pendant-un-defaut, operation: cree }
