@@ -6,6 +6,7 @@ liens:
   - { tag: document, nom: 'ssk-terrarium-cadrage#2026-006', url: 'https://ssk-canon.s3-website.fr-par.scw.cloud/ssk-it/ssk-terrarium-cadrage/cadrages/2026-006' }
   - { tag: document, nom: 'ssk-terrarium-cadrage#2026-007', url: 'https://ssk-canon.s3-website.fr-par.scw.cloud/ssk-it/ssk-terrarium-cadrage/cadrages/2026-007' }
   - { tag: issue_github, nom: 'ssk-terrarium#24', url: 'https://github.com/sskorupski/ssk-terrarium/issues/24' }
+  - { tag: pull_request, nom: 'ssk-terrarium#25', url: 'https://github.com/sskorupski/ssk-terrarium/pull/25' }
 impacts:
   - { regle: RG-chauffe-de-la-sht45, operation: cree }
   - { regle: RG-topics-mqtt, operation: modifie }
