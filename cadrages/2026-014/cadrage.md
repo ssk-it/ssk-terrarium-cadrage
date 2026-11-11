@@ -13,6 +13,7 @@ liens:
   - { tag: document, nom: 'sterrarium-cadrage#2026-007', url: 'https://ssk-canon.s3-website.fr-par.scw.cloud/sskorupski/sterrarium-cadrage/cadrages/2026-007' }
   - { tag: pull_request, nom: 'sterrarium-cadrage#14', url: 'https://github.com/sskorupski/sterrarium-cadrage/pull/14' }
   - { tag: issue_github, nom: 'ssk-it-infra#51', url: 'https://github.com/ssk-it/ssk-it-infra/issues/51' }
+  - { tag: pull_request, nom: 'ssk-it-infra#52', url: 'https://github.com/ssk-it/ssk-it-infra/pull/52' }
   - { tag: issue_github, nom: 'sterrarium#23', url: 'https://github.com/sskorupski/sterrarium/issues/23' }
 impacts:
   - { regle: RG-historique-des-mesures, operation: cree }
@@ -64,6 +65,15 @@ Ce qu'on cherche :
   [sterrarium-cadrage#2026-005](https://ssk-canon.s3-website.fr-par.scw.cloud/sskorupski/sterrarium-cadrage/cadrages/2026-005), en cours, écarte de même que l'application interroge Skaron en HTTP : « un secret de plus sur chaque appareil, dont la version web ne sait pas garder », « un client HTTP de plus », et « ouvrir le CORS ». La décision `02-lecture-hors-du-cluster` pèse chacun de ces motifs.
 - La vue Historique de l'application se cadre dans [sterrarium-cadrage#2026-007](https://ssk-canon.s3-website.fr-par.scw.cloud/sskorupski/sterrarium-cadrage/cadrages/2026-007), à partir du contrat que fixe ce cadrage.
 
+### Ce que la réalisation a appris
+
+Ces constats ont été relevés sur ssk-it-infra#52, le 11 novembre 2026, sur un banc Docker aux versions du dépôt, avec 400 jours d'états injectés :
+
+- `query_range` n'aligne pas ses fenêtres sur le pas : elles partent de l'heure de la requête. Une sous-requête (`(…)[25h:5m]`) les aligne sur les multiples du pas, en temps universel, et c'est elle que Telegraf demande ;
+- une fenêtre d'un pas explicite (`[1i]`) ne comble pas un trou : une fenêtre sans point est absente de la réponse. Sans fenêtre explicite, VictoriaMetrics prolonge une série par-dessus un point manquant ;
+- Telegraf publie un résumé en un seul message retenu, par une sortie MQTT au sérialiseur `template`, sans service écrit : la réserve de la décision `02-lecture-hors-du-cluster` est levée ;
+- un résumé pèse de 50 à 66 Ko, et non 100.
+
 ## Parcours utilisateur
 
 1. Le régulateur publie son état toutes les 30 s. Telegraf le reçoit, et en écrit les valeurs numériques dans VictoriaMetrics, y compris celles de chaque sonde d'air.
@@ -106,7 +116,7 @@ Ce que la règle protège :
 
 ### RG-resumes-de-l-historique
 
-Toutes les 5 minutes, la supervision publie sur le courtier les résumés de chaque régulateur dont l'historique garde un état dans les 365 derniers jours. Il y a un résumé par période, retenu, sur `ssk-terrarium/<id>/historique/<periode>`. Les quatre périodes sont publiées même vides.
+Toutes les 5 minutes, la supervision publie sur le courtier les résumés de chaque régulateur dont l'historique garde un état dans les 365 derniers jours. Il y a un résumé par période, retenu, sur `ssk-terrarium/<id>/historique/<periode>`. Les quatre périodes sont publiées, même vides, pour chaque régulateur qui a un état dans une journée close de l'année. Un régulateur tout neuf n'a d'abord que les périodes dont une fenêtre est close, et son résumé `1an` arrive après sa première journée close.
 
 | `<periode>` | Ce qu'elle couvre | Pas d'une fenêtre | Fenêtres |
 | --- | --- | --- | --- |
@@ -139,7 +149,7 @@ Un exemple, réduit ici à quatre fenêtres et à deux champs :
 }
 ```
 
-Chaque tableau a une case par fenêtre, dans l'ordre. La fenêtre `i` va de `debut + i × pas_s`, inclus, à la fenêtre suivante, exclue. Les fenêtres sont alignées sur le pas, en temps universel : une fenêtre d'un jour va de minuit à minuit UTC. `fin` est la fin de la dernière fenêtre close. La fenêtre en cours n'est jamais résumée : le résumé `1an` a donc jusqu'à un jour de retard, et celui des 24 heures jusqu'à 5 minutes.
+Chaque tableau a une case par fenêtre, dans l'ordre. La fenêtre `i` va de `debut + i × pas_s`, exclu, à `debut + (i + 1) × pas_s`, inclus : c'est le sens des fenêtres de VictoriaMetrics. Les fenêtres sont alignées sur le pas, en temps universel : une fenêtre d'un jour va de minuit à minuit UTC. `fin` est la fin de la dernière fenêtre close. La fenêtre en cours n'est jamais résumée : le résumé `1an` a donc jusqu'à un jour de retard, et celui des 24 heures jusqu'à 5 minutes.
 
 Dans chaque fenêtre :
 
@@ -149,7 +159,7 @@ Dans chaque fenêtre :
 
 Une série que le régulateur ne publie pas est absente du résumé, et non remplie de `null`. C'est le cas d'un substrat sans sonde, ou des sondes d'un firmware qui ne publie pas `sondes`. Les noms des sondes sont ceux de l'historique (RG-historique-des-mesures).
 
-Un résumé est republié toutes les 5 minutes, même inchangé : son `calcule_le` dit que la supervision vit. Le courtier, sans volume, le perd à son redémarrage, et il revient à la publication suivante. Un résumé fait de l'ordre de 100 Ko pour l'année, avec deux sondes.
+Un résumé est republié toutes les 5 minutes, même inchangé : son `calcule_le` dit que la supervision vit. Le courtier, sans volume, le perd à son redémarrage, et il revient à la publication suivante. Un résumé pèse de 50 à 70 Ko, avec deux sondes.
 
 Les résumés sont publiés par l'historique, sous le compte `historique`, qui ne peut publier que sur `ssk-terrarium/+/historique/#` (RG-courtier-authentifie). Le régulateur ne lit pas ces sujets. L'application les lit sous son compte `sterrarium`, qui lit déjà tout `ssk-terrarium/#`. Ni sujet ni format ne change ce que le régulateur publie (RG-topics-mqtt).
 
