@@ -11,7 +11,7 @@ liens:
   - { tag: document, nom: 'sterrarium-cadrage#2026-005', url: 'https://ssk-canon.s3-website.fr-par.scw.cloud/sskorupski/sterrarium-cadrage/cadrages/2026-005' }
 impacts:
   - { regle: RG-mise-a-jour-a-distance, operation: cree }
-  - { regle: RG-mise-a-jour-refusee-pendant-un-defaut, operation: cree }
+  - { regle: RG-mise-a-jour-pendant-un-defaut, operation: cree }
   - { regle: RG-image-signee, operation: cree }
   - { regle: RG-regulation-pendant-la-mise-a-jour, operation: cree }
   - { regle: RG-retour-arriere-automatique, operation: cree }
@@ -40,7 +40,7 @@ Le propriétaire veut pouvoir installer une nouvelle version depuis chez lui. Ma
 | U2 | La mise à jour ne laisse jamais le bac sans régulation | La régulation continue pendant le téléchargement. La seule interruption est le redémarrage, sorties coupées |
 | U3 | Un firmware qui ne marche pas se défait seul | Un nouveau firmware qui plante, ou qui ne régule pas ou ne rejoint pas le courtier dans les 5 minutes, laisse place à l'ancien sans intervention |
 | U4 | Seul le propriétaire peut produire une image installable | Une image que la clé du propriétaire n'a pas signée est refusée, quel que soit le compte qui commande |
-| U5 | On ne met pas à jour un bac qui va mal | La commande est refusée pendant un défaut, avec sa raison |
+| U5 | Une mise à jour pendant un défaut se fait en connaissance de cause | Chaque défaut en cours, ou qui apparaît pendant le téléchargement, est nommé sur `event` ; aucun n'empêche l'installation |
 | U6 | Les réglages survivent | Mode, consigne, plages, fuseau, sondes, Wi-Fi et courtier sont conservés |
 | U7 | On suit la mise à jour à distance | Chaque étape, la progression, l'échec et sa raison, et le retour arrière se lisent sur `event` |
 
@@ -79,7 +79,7 @@ Le propriétaire veut pouvoir installer une nouvelle version depuis chez lui. Ma
    - le publie dans Skaron sous la version `1.3.0`, cible `esp32-phase-1`, canal `stable`.
 3. Une fois par régulateur, il émet sa licence Skaron et la lui transmet : `outils/licence-mise-a-jour.sh <id>` la publie sur `cmd/mise-a-jour` sans l'afficher. Le régulateur répond `{"evenement":"mise-a-jour","etape":"licence","resultat":"applique"}`.
 4. Depuis l'application ou `mosquitto_pub`, il envoie `{"action":"verifier"}` sur `cmd/mise-a-jour`. Le régulateur interroge Skaron et répond `{"evenement":"mise-a-jour","etape":"disponible","version":"1.3.0"}`. S'il est déjà à jour, il répond `"etape":"a-jour"`.
-5. Il envoie `{"action":"installer","version":"1.3.0"}`. Le régulateur vérifie qu'aucun défaut n'est en cours, et redemande l'URL à Skaron. Si Skaron propose toujours `1.3.0`, il répond `"etape":"acceptee"`, vérifie que la signature est celle du propriétaire et nomme bien cette version, puis télécharge l'image dans la partition inactive.
+5. Il envoie `{"action":"installer","version":"1.3.0"}`. Le régulateur redemande l'URL à Skaron. Si Skaron propose toujours `1.3.0`, il répond `"etape":"acceptee"`, avec la liste des défauts en cours s'il y en a, vérifie que la signature est celle du propriétaire et nomme bien cette version, puis télécharge l'image dans la partition inactive.
    - Pendant ce temps, il régule et publie `state` comme d'habitude.
    - Il publie `"etape":"telechargement","progression":10`, puis 20, et ainsi de suite.
 6. Image complète et signature vérifiée : il publie `"etape":"redemarrage"` et redémarre. Les sorties sont coupées pendant quelques secondes.
@@ -87,8 +87,8 @@ Le propriétaire veut pouvoir installer une nouvelle version depuis chez lui. Ma
 
 Quand ça se passe mal :
 
-- **Un défaut est en cours** (sonde en défaut, coupure par le substrat, pause de chauffe) : `"etape":"refusee","raison":"defaut en cours"`. Rien ne se télécharge.
-- **Le réseau tombe pendant le téléchargement**, ou un défaut apparaît : `"etape":"echec","raison":…`. La partition inactive est abandonnée et le firmware en place continue. Rien ne se relance tout seul.
+- **Un défaut est en cours** (sonde en défaut, coupure par le substrat, pause de chauffe) : l'installation se fait quand même, et `acceptee` le nomme : `"defauts":["sonde dht11"]`. Un défaut qui apparaît pendant le téléchargement publie `"etape":"avertissement"`, sans l'interrompre.
+- **Le réseau tombe pendant le téléchargement** : `"etape":"echec","raison":"telechargement interrompu"`. La partition inactive est abandonnée et le firmware en place continue. Rien ne se relance tout seul.
 - **La signature ne correspond pas** : `"etape":"echec","raison":"signature invalide"`. L'image n'est jamais rendue démarrable.
 - **Le nouveau firmware plante au démarrage**, ou le chien de garde le redémarre avant qu'il se soit déclaré valide : le bootloader revient à l'ancien. L'ancien publie `"etape":"annulee","version":"1.3.0"` à sa connexion.
 - **Le nouveau firmware démarre, mais ne régule pas ou ne rejoint pas le courtier en 5 minutes** : il redémarre de lui-même, et le bootloader revient à l'ancien, qui publie `annulee`.
@@ -122,11 +122,18 @@ Ce que la règle protège :
 - une commande ne peut ni désigner une autre source, ni faire installer une image arbitraire : elle ne porte qu'un numéro de version que Skaron doit proposer ;
 - une mise à jour ratée ne se répète pas en boucle.
 
-### RG-mise-a-jour-refusee-pendant-un-defaut
+### RG-mise-a-jour-pendant-un-defaut
 
-Le régulateur refuse une installation, avec sa raison sur `event`, dans ces cas :
+Un défaut en cours n'empêche ni n'interrompt une installation : il est nommé. `acceptee` porte `defauts`, la liste des défauts en cours, et chaque défaut qui apparaît pendant le téléchargement publie `"etape":"avertissement"` avec la liste complète. Les défauts nommés sont :
 
-- `defaut en cours` : un défaut est en cours, qu'il s'agisse de `defaut_capteur`, d'une sonde d'air en défaut, d'une mesure du substrat rejetée, d'une coupure par le substrat ou d'une pause de chauffe ;
+- `defaut capteur` : l'air intérieur est en défaut (`defaut_capteur`) ;
+- `sonde sht45`, `sonde dht11` : la sonde est en défaut, qu'elle soit intérieure ou extérieure ;
+- `substrat rejete` : la mesure du substrat est rejetée, sonde absente comprise ;
+- `coupure substrat` : le chauffage est coupé par le substrat ;
+- `pause chauffe` : la chauffe continue est en pause.
+
+Le régulateur refuse une installation, avec sa raison sur `event`, dans ces seuls cas :
+
 - `mise a jour en cours` : une autre vérification ou installation est en cours, ou le firmware installé par la précédente ne s'est pas encore déclaré valide : la partition de l'ancien est son seul chemin de retour, et rien ne doit l'écraser avant ;
 - `sans licence` : aucune licence n'est enregistrée ;
 - `version non proposee` : la version demandée n'est pas celle que Skaron propose ;
@@ -135,11 +142,7 @@ Le régulateur refuse une installation, avec sa raison sur `event`, dans ces cas
 
 La règle d'ignorance des 3 secondes de RG-topics-mqtt s'applique aussi à cette commande.
 
-Un défaut qui apparaît pendant le téléchargement interrompt l'installation, avec `"etape":"echec","raison":"defaut en cours"`.
-
-Le mode `MAINTENANCE` n'empêche pas une installation : les sorties y sont déjà coupées, et c'est le moment le plus sûr pour remplacer le firmware.
-
-Ce que la règle protège : le firmware en place est le seul à connaître le défaut en cours et à le gérer. Le remplacer à ce moment ajouterait un redémarrage, sorties coupées, à une situation déjà dégradée, et effacerait de la mémoire vive les délais de détection en cours (RG-capteur-en-defaut). Un défaut se règle d'abord, et la mise à jour vient ensuite.
+Ce que la règle protège : le propriétaire sait ce qu'il fait en installant. Une sonde absente ou extérieure en défaut ne bloque pas un bac qui régule normalement, et un correctif peut s'installer précisément pour régler un défaut. Le prix est connu (décision `07-mise-a-jour-pendant-un-defaut`) : le redémarrage, sorties coupées, s'ajoute à une situation déjà dégradée, les délais de détection en cours repartent de zéro (RG-capteur-en-defaut), et un nouveau firmware installé pendant un défaut de l'air intérieur risque de ne retenir aucune mesure en 5 minutes, et donc d'être défait (RG-retour-arriere-automatique).
 
 ### RG-image-signee
 
@@ -215,10 +218,11 @@ Une mise à jour publie sur `event` : `{"evenement":"mise-a-jour","etape":…}`,
 | `licence` | licence reçue | `resultat` : `applique`, `applique_non_enregistre` ou `refuse` (jeton vide, trop long, ou avec d'autres caractères que ceux d'un JWT) |
 | `disponible` | réponse à `verifier` | `version` proposée par Skaron |
 | `a-jour` | réponse à `verifier` | `version` en place |
-| `refusee` | commande refusée (RG-mise-a-jour-refusee-pendant-un-defaut) | `raison` |
-| `acceptee` | installation acceptée, Skaron propose la version demandée | `version` |
+| `refusee` | commande refusée (RG-mise-a-jour-pendant-un-defaut) | `raison` |
+| `acceptee` | installation acceptée, Skaron propose la version demandée | `version`, et `defauts` si un défaut est en cours (RG-mise-a-jour-pendant-un-defaut) |
+| `avertissement` | un défaut apparaît pendant le téléchargement, qui continue | `version`, `defauts` : tous les défauts en cours |
 | `telechargement` | tous les 10 % | `version`, `progression` (entier, 0 à 100) |
-| `echec` | installation abandonnée, firmware en place conservé | `version`, `raison` : `defaut en cours`, `telechargement interrompu` (60 s sans octet, connexion perdue, ou adresse de l'image refusée), `signature invalide`, `image invalide`, `image trop grande`, `version non plus recente` ou `phase differente` |
+| `echec` | installation abandonnée, firmware en place conservé | `version`, `raison` : `telechargement interrompu` (60 s sans octet, connexion perdue, ou adresse de l'image refusée), `signature invalide`, `image invalide`, `image trop grande`, `version non plus recente` ou `phase differente` |
 | `redemarrage` | image vérifiée, juste avant de redémarrer | `version` |
 | `validee` | nouveau firmware déclaré valide (RG-retour-arriere-automatique) | `version` |
 | `annulee` | ancien firmware restauré par le bootloader | `version` refusée |
