@@ -4,6 +4,9 @@ titre: Renouveler à distance le certificat client du régulateur, sans que sa c
 domaines: [supervision, securite]
 liens:
   - { tag: pull_request, nom: 'ssk-terrarium-cadrage#37', url: 'https://github.com/ssk-it/ssk-terrarium-cadrage/pull/37' }
+  - { tag: pull_request, nom: 'ssk-terrarium-cadrage#40', url: 'https://github.com/ssk-it/ssk-terrarium-cadrage/pull/40' }
+  - { tag: issue_github, nom: 'ssk-terrarium#33', url: 'https://github.com/sskorupski/ssk-terrarium/issues/33' }
+  - { tag: issue_github, nom: 'ssk-it-infra#50', url: 'https://github.com/ssk-it/ssk-it-infra/issues/50' }
 impacts:
   - { regle: RG-renouvellement-du-certificat, operation: cree }
   - { regle: RG-courtier-authentifie, operation: modifie }
