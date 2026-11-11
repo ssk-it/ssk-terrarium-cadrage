@@ -3,6 +3,7 @@ id: 2026-016
 titre: Une consigne de chauffage pour le jour et une pour la nuit en mode ACTIF
 domaines: [regulation, supervision]
 liens:
+  - { tag: issue_github, nom: 'ssk-terrarium#36', url: 'https://github.com/sskorupski/ssk-terrarium/issues/36' }
   - { tag: document, nom: 'ssk-terrarium-cadrage#2026-015', url: 'https://ssk-canon.s3-website.fr-par.scw.cloud/ssk-it/ssk-terrarium-cadrage/cadrages/2026-015' }
 impacts:
   - { regle: RG-chauffage-par-hysteresis, operation: modifie }
