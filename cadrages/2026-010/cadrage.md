@@ -64,7 +64,7 @@ Le propriétaire veut pouvoir installer une nouvelle version depuis chez lui. Ma
 ### Ce que le firmware permet déjà (mesuré sur `edceb22`, 11 novembre 2026)
 
 - **Table de partitions** : celle d'Arduino par défaut pour `esp32dev`, avec deux partitions d'application `ota_0` et `ota_1` de 1,25 Mo (0x140000) et une partition `otadata`. Aucun changement de table n'est nécessaire, et donc aucun téléversement USB préalable.
-- **Taille** : `firmware.bin` fait 1 045 648 octets, soit 80 % d'une partition. La marge est de 260 Ko.
+- **Taille** : `firmware.bin` fait 1 045 648 octets, soit 80 % d'une partition. La marge est de 260 Ko. Mesuré après réalisation : 1 139 953 octets avec la mise à jour à distance, soit 87 %, et une marge de 167 Ko. Le client HTTPS et la vérification minisign en prennent 93 Ko ; appeler `sodium_init()` en aurait ajouté 60, pour Argon2 et les tables de signature, dont la vérification n'a pas besoin.
 - **Retour arrière** : le bootloader précompilé d'Arduino est construit avec `CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE=y`. Arduino valide cependant toute nouvelle image dès son démarrage, sauf si le firmware surcharge `verifyRollbackLater()`. Il faut donc la surcharger pour que RG-retour-arriere-automatique ait un effet.
 - **Signature** : ni secure boot, ni `CONFIG_SECURE_SIGNED_APPS_NO_SECURE_BOOT`. La signature se vérifie donc dans le firmware. libsodium, présente dans le SDK d'Arduino, fournit BLAKE2b et Ed25519, les primitives de minisign.
 - **Version** : `state` publie déjà `version`, tirée de `git describe` à la compilation (`phase-1`, `phase-1-3-g1a2b3c4`).
@@ -79,7 +79,7 @@ Le propriétaire veut pouvoir installer une nouvelle version depuis chez lui. Ma
    - le publie dans Skaron sous la version `1.3.0`, cible `esp32-phase-1`, canal `stable`.
 3. Une fois par régulateur, il émet sa licence Skaron et la lui transmet : `outils/licence-mise-a-jour.sh <id>` la publie sur `cmd/mise-a-jour` sans l'afficher. Le régulateur répond `{"evenement":"mise-a-jour","etape":"licence","resultat":"applique"}`.
 4. Depuis l'application ou `mosquitto_pub`, il envoie `{"action":"verifier"}` sur `cmd/mise-a-jour`. Le régulateur interroge Skaron et répond `{"evenement":"mise-a-jour","etape":"disponible","version":"1.3.0"}`. S'il est déjà à jour, il répond `"etape":"a-jour"`.
-5. Il envoie `{"action":"installer","version":"1.3.0"}`. Le régulateur vérifie qu'aucun défaut n'est en cours. Il répond `"etape":"acceptee"`, redemande l'URL à Skaron, puis télécharge l'image dans la partition inactive.
+5. Il envoie `{"action":"installer","version":"1.3.0"}`. Le régulateur vérifie qu'aucun défaut n'est en cours, et redemande l'URL à Skaron. Si Skaron propose toujours `1.3.0`, il répond `"etape":"acceptee"`, vérifie que la signature est celle du propriétaire et nomme bien cette version, puis télécharge l'image dans la partition inactive.
    - Pendant ce temps, il régule et publie `state` comme d'habitude.
    - Il publie `"etape":"telechargement","progression":10`, puis 20, et ainsi de suite.
 6. Image complète et signature vérifiée : il publie `"etape":"redemarrage"` et redémarre. Les sorties sont coupées pendant quelques secondes.
@@ -94,6 +94,7 @@ Quand ça se passe mal :
 - **Le nouveau firmware démarre, mais ne régule pas ou ne rejoint pas le courtier en 5 minutes** : il redémarre de lui-même, et le bootloader revient à l'ancien, qui publie `annulee`.
 - **La version demandée n'est pas celle que Skaron propose**, parce qu'une autre a été publiée entre-temps : `"etape":"refusee","raison":"version non proposee"`. Le propriétaire relance `verifier`.
 - **Licence absente, refusée par Skaron, ou quota dépassé** : `"etape":"refusee"`, avec la raison `sans licence`, `licence refusee` ou `quota depasse`.
+- **Le firmware en place n'a pas été compilé depuis un tag `phase-*`** : il ne connaît pas sa version, et répond `"etape":"refusee","raison":"version inconnue"`.
 
 ## Énoncés
 
@@ -101,9 +102,9 @@ Quand ça se passe mal :
 
 Le firmware se met à jour à distance, et seulement sur commande, par `ssk-terrarium/<id>/cmd/mise-a-jour`. Il n'y a ni mise à jour automatique, ni vérification périodique, ni relance d'une mise à jour qui a échoué. La commande est un objet JSON qui porte l'une de ces trois formes :
 
-- `{"licence":"<jeton>"}` enregistre en mémoire non volatile la licence Skaron du régulateur. Le jeton n'est jamais publié ni écrit sur la liaison série.
-- `{"action":"verifier"}` demande à Skaron la version proposée au régulateur.
-- `{"action":"installer","version":"<x.y.z>"}` installe cette version, si Skaron la propose encore au moment de la commande. Le propriétaire installe donc exactement ce qu'il a vu.
+- `{"licence":"<jeton>"}` enregistre en mémoire non volatile la licence Skaron du régulateur. Le jeton n'est jamais publié ni écrit sur la liaison série. Il compte de 1 à 768 caractères, lettres, chiffres, `-`, `_` et `.`, ceux d'un JWT : rien qui puisse casser un en-tête HTTP ou une ligne.
+- `{"action":"verifier"}` demande à Skaron la version proposée au régulateur. Un défaut en cours ne l'empêche pas : elle ne change rien.
+- `{"action":"installer","version":"<x.y.z>"}` installe cette version, si Skaron la propose encore au moment de la commande. Le propriétaire installe donc exactement ce qu'il a vu. Tout autre champ fait refuser la commande.
 
 La licence s'enregistre aussi par la liaison série (`licence <jeton>`).
 
@@ -126,10 +127,11 @@ Ce que la règle protège :
 Le régulateur refuse une installation, avec sa raison sur `event`, dans ces cas :
 
 - `defaut en cours` : un défaut est en cours, qu'il s'agisse de `defaut_capteur`, d'une sonde d'air en défaut, d'une mesure du substrat rejetée, d'une coupure par le substrat ou d'une pause de chauffe ;
-- `mise a jour en cours` : une autre installation est en cours ;
+- `mise a jour en cours` : une autre vérification ou installation est en cours, ou le firmware installé par la précédente ne s'est pas encore déclaré valide : la partition de l'ancien est son seul chemin de retour, et rien ne doit l'écraser avant ;
 - `sans licence` : aucune licence n'est enregistrée ;
 - `version non proposee` : la version demandée n'est pas celle que Skaron propose ;
-- `licence refusee`, `quota depasse` ou `service injoignable`, selon la réponse de Skaron (401 ou 403, 429, autre).
+- `licence refusee`, `quota depasse` ou `service injoignable`, selon la réponse de Skaron (401 ou 403, 429, autre). Une réponse 200 illisible, ou dont l'adresse de l'image n'est pas en `https://`, compte comme `service injoignable` ;
+- `version inconnue` : le firmware en place n'a pas été compilé depuis un tag `phase-*`, et ne sait pas quelle version demander.
 
 La règle d'ignorance des 3 secondes de RG-topics-mqtt s'applique aussi à cette commande.
 
@@ -141,7 +143,9 @@ Ce que la règle protège : le firmware en place est le seul à connaître le d�
 
 ### RG-image-signee
 
-Le régulateur n'installe qu'une image signée par la clé minisign du propriétaire. La clé publique est compilée dans le firmware. L'image est vérifiée **pendant** son écriture dans la partition inactive : l'empreinte BLAKE2b-512 se calcule au fil du téléchargement, puis la signature Ed25519 se vérifie, avec son commentaire de confiance. La partition n'est déclarée démarrable qu'après cette vérification et celle du format d'image d'ESP-IDF.
+Le régulateur n'installe qu'une image signée par la clé minisign du propriétaire. La clé publique est compilée dans le firmware. L'image est vérifiée **pendant** son écriture dans la partition inactive : l'empreinte BLAKE2b-512 se calcule au fil du téléchargement, puis la signature Ed25519 se vérifie, avec son commentaire de confiance. La partition n'est déclarée démarrable qu'après cette vérification et celle du format d'image d'ESP-IDF. Seules les signatures « préhachées » de minisign (`ED`) sont acceptées, jamais l'ancien format qui signe l'image entière.
+
+Le commentaire de confiance, signé avec l'image, vaut `ssk-terrarium esp32-phase-<N> <x.y.z>` : le produit, la cible et la version. Le régulateur le vérifie avant le premier octet téléchargé, et refuse l'image s'il nomme une autre phase (`phase differente`), une version qui n'est pas plus récente que la sienne (`version non plus recente`), ou une autre version que celle demandée (`signature invalide`). Skaron transporte la signature comme pour Tauri : le fichier `.minisig` encodé en base64, sur une ligne.
 
 Le régulateur refuse aussi une image :
 - dont la version n'est pas strictement plus récente que la sienne ;
@@ -208,18 +212,20 @@ Une mise à jour publie sur `event` : `{"evenement":"mise-a-jour","etape":…}`,
 
 | `etape` | Quand | Champs |
 | --- | --- | --- |
-| `licence` | licence reçue | `resultat` : `applique`, `applique_non_enregistre` ou `refuse` (jeton vide ou trop long) |
+| `licence` | licence reçue | `resultat` : `applique`, `applique_non_enregistre` ou `refuse` (jeton vide, trop long, ou avec d'autres caractères que ceux d'un JWT) |
 | `disponible` | réponse à `verifier` | `version` proposée par Skaron |
 | `a-jour` | réponse à `verifier` | `version` en place |
 | `refusee` | commande refusée (RG-mise-a-jour-refusee-pendant-un-defaut) | `raison` |
-| `acceptee` | installation acceptée | `version` |
+| `acceptee` | installation acceptée, Skaron propose la version demandée | `version` |
 | `telechargement` | tous les 10 % | `version`, `progression` (entier, 0 à 100) |
-| `echec` | installation abandonnée, firmware en place conservé | `version`, `raison` : `defaut en cours`, `telechargement interrompu`, `signature invalide`, `image invalide`, `image trop grande`, `version non plus recente` ou `phase differente` |
+| `echec` | installation abandonnée, firmware en place conservé | `version`, `raison` : `defaut en cours`, `telechargement interrompu` (60 s sans octet, connexion perdue, ou adresse de l'image refusée), `signature invalide`, `image invalide`, `image trop grande`, `version non plus recente` ou `phase differente` |
 | `redemarrage` | image vérifiée, juste avant de redémarrer | `version` |
 | `validee` | nouveau firmware déclaré valide (RG-retour-arriere-automatique) | `version` |
 | `annulee` | ancien firmware restauré par le bootloader | `version` refusée |
 
 `state` ne porte aucun champ de mise à jour : la version en place s'y lit déjà, et une installation se suit sur `event`.
+
+Une commande `cmd/mise-a-jour` illisible reçoit la réponse commune aux commandes : `{"evenement":"commande","sujet":"cmd/mise-a-jour","resultat":"refusee","raison":…}`, où `raison` vaut `JSON invalide`, `champ inconnu`, `action inconnue (verifier, installer)` ou `version invalide (x.y.z)`. Une licence invalide, elle, reçoit l'étape `licence` avec `"resultat":"refuse"`.
 
 Une commande retenue par le courtier n'est jamais appliquée : seule compte une commande publiée pendant que le régulateur est connecté. Le courtier remet les messages retenus juste après l'abonnement, et la bibliothèque PubSubClient ne dit pas si un message l'est. Toute commande reçue dans les 3 secondes qui suivent l'abonnement est donc ignorée, et l'ignorance signalée sur `event`. Toute commande reçoit sa réponse sur `event`. Une commande `sondes` refusée parce qu'elle ne laisserait aucune sonde intérieure l'est avec la raison `aucune sonde interieure`.
 
