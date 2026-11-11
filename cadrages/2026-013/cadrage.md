@@ -6,6 +6,7 @@ liens:
   - { tag: piste, nom: '#9', url: 'https://github.com/ssk-it/ssk-terrarium-cadrage/issues/9' }
   - { tag: issue_github, nom: 'ssk-terrarium#29', url: 'https://github.com/sskorupski/ssk-terrarium/issues/29' }
   - { tag: issue_github, nom: 'sterrarium#19', url: 'https://github.com/sskorupski/sterrarium/issues/19' }
+  - { tag: pull_request, nom: 'ssk-terrarium#30', url: 'https://github.com/sskorupski/ssk-terrarium/pull/30' }
   - { tag: document, nom: 'ssk-terrarium-cadrage#2026-008', url: 'https://ssk-canon.s3-website.fr-par.scw.cloud/ssk-it/ssk-terrarium-cadrage/cadrages/2026-008' }
 impacts:
   - { regle: RG-ventilation-periodique, operation: cree }
