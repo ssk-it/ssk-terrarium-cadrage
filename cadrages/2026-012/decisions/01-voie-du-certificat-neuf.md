@@ -43,7 +43,7 @@ Le régulateur tire son certificat d'un service HTTPS du cluster, comme le ferai
 
 Le certificat voyage avec une image du firmware mise à jour à distance.
 
-**Contre** — l'image porterait la clé, ce qu'a écarté `01-portail-de-configuration` de 2026-002. Et la mise à jour à distance n'existe pas encore.
+**Contre** — l'image porterait la clé, ce qu'a écarté `01-portail-de-configuration` de 2026-002. La mise à jour à distance, cadrée par 2026-010, n'installe en outre qu'une image signée et commune à tous les régulateurs. Elle ne peut pas porter ce qui est propre à l'un d'eux.
 
 ## Décision
 

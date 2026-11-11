@@ -53,7 +53,11 @@ Consulté le 11 novembre 2026, sur `origin/main` (3905479) et sur les branches d
 - **RG-sorties-coupees-au-demarrage** et **RG-chien-de-garde** : tout redémarrage coupe d'abord les sorties. Le régulateur adopte donc un certificat neuf sans redémarrer.
 - **ADR-heure-par-ntp** : le régulateur n'a d'heure que par NTP. Il ne juge une échéance que s'il connaît l'heure. Sans elle, c'est `ssk-it-infra` qui demande le renouvellement.
 - **ADR-courtier-mosquitto-sur-ssk-it-01** reste entière : Traefik vérifie toujours le client, et rien ne s'ajoute sur le cluster pour signer.
-- **La mise à jour du firmware à distance** (fonctionnalité `mise-a-jour`, besoin NF6 de 2026-001) n'a ni règle ni cadrage. Ce cadrage ne s'en sert pas. Il ne la prépare pas non plus.
+- **La mise à jour du firmware à distance** est cadrée par [ssk-terrarium-cadrage#2026-010](https://ssk-canon.s3-website.fr-par.scw.cloud/ssk-it/ssk-terrarium-cadrage/cadrages/2026-010), en cours sur sa branche (ssk-it/ssk-terrarium-cadrage#38). La synthèse du référentiel, faite au début de la rédaction, ne l'avait pas vu, et la CI de cette demande de fusion l'a fait apparaître. Ce cadrage ne s'en sert pas. Les deux se côtoient sur quatre points :
+  - les sujets : 2026-010 commande la mise à jour par `cmd/mise-a-jour`, dans les droits actuels de RG-courtier-authentifie. Le renouvellement vit sous `certificat`, hors de `cmd/`. Aucun compte qui commande une mise à jour ne peut remettre un certificat ;
+  - la mémoire non volatile : l'OTA conserve le certificat comme les autres réglages, et il doit en être de même pour le candidat et sa clé. Le redémarrage qui suit une mise à jour repart du certificat en place, comme le prévoit RG-renouvellement-du-certificat ;
+  - la mémoire vive : 2026-010 doit mesurer le tas libre pendant un téléchargement, à côté de la connexion TLS au courtier. Tirer une clé et écrire une demande pèse aussi sur le tas. Les deux opérations ne doivent pas tourner ensemble : le régulateur reporte sa demande pendant une installation ;
+  - la clé de signature : 2026-010 garde la clé minisign du firmware sur le poste du propriétaire. Ce cadrage garde la clé de l'autorité dans le trousseau iCloud. Ce sont deux clés distinctes, pour deux pouvoirs distincts.
 - Le compte `sterrarium` (ssk-it/ssk-it-infra, `sceller-secrets.sh`) passe par `wss://mq-ws.ssk-it.fr/mqtt`, sans certificat client. Il n'est pas touché : il n'écrit que sous `cmd/`, et ne peut donc rien publier sous `certificat`.
 
 ## Parcours utilisateur
@@ -75,7 +79,7 @@ Consulté le 11 novembre 2026, sur `origin/main` (3905479) et sur les branches d
 
 ## Hors périmètre
 
-- **La mise à jour du firmware à distance**, qui aurait pu porter le renouvellement. Elle demande son propre cadrage (besoin NF6 de 2026-001).
+- **La mise à jour du firmware à distance**, qui aurait pu porter le renouvellement. Elle est cadrée par [ssk-terrarium-cadrage#2026-010](https://ssk-canon.s3-website.fr-par.scw.cloud/ssk-it/ssk-terrarium-cadrage/cadrages/2026-010).
 - **Une signature sans personne derrière le Mac**, par une tâche planifiée ou un service : la clé de l'autorité ne se déverrouille qu'à la main (décision `03-declenchement`).
 - **`mq-ws.ssk-it.fr`** et le compte `sterrarium` : sans certificat client depuis 2026-011, ils ne sont pas concernés.
 - **La première remise**, qui reste celle de 2026-011, par le portail.
