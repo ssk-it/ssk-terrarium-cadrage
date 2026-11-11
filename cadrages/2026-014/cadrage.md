@@ -11,6 +11,9 @@ liens:
   - { tag: document, nom: 'sterrarium-cadrage#2026-001', url: 'https://ssk-canon.s3-website.fr-par.scw.cloud/sskorupski/sterrarium-cadrage/cadrages/2026-001' }
   - { tag: document, nom: 'sterrarium-cadrage#2026-005', url: 'https://ssk-canon.s3-website.fr-par.scw.cloud/sskorupski/sterrarium-cadrage/cadrages/2026-005' }
   - { tag: document, nom: 'sterrarium-cadrage#2026-007', url: 'https://ssk-canon.s3-website.fr-par.scw.cloud/sskorupski/sterrarium-cadrage/cadrages/2026-007' }
+  - { tag: pull_request, nom: 'sterrarium-cadrage#14', url: 'https://github.com/sskorupski/sterrarium-cadrage/pull/14' }
+  - { tag: issue_github, nom: 'ssk-it-infra#51', url: 'https://github.com/ssk-it/ssk-it-infra/issues/51' }
+  - { tag: issue_github, nom: 'sterrarium#23', url: 'https://github.com/sskorupski/sterrarium/issues/23' }
 impacts:
   - { regle: RG-historique-des-mesures, operation: cree }
   - { regle: RG-resumes-de-l-historique, operation: cree }
