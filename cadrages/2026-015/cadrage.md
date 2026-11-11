@@ -3,6 +3,7 @@ id: 2026-015
 titre: Un jour et une nuit qui suivent les saisons, et une ventilation moins mécanique
 domaines: [regulation, supervision]
 liens:
+  - { tag: pull_request, nom: 'ssk-terrarium#37', url: 'https://github.com/sskorupski/ssk-terrarium/pull/37' }
   - { tag: issue_github, nom: 'ssk-terrarium#35', url: 'https://github.com/sskorupski/ssk-terrarium/issues/35' }
   - { tag: document, nom: 'ssk-terrarium-cadrage#2026-013', url: 'https://ssk-canon.s3-website.fr-par.scw.cloud/ssk-it/ssk-terrarium-cadrage/cadrages/2026-013' }
   - { tag: document, nom: 'ssk-terrarium-cadrage#47', url: 'https://github.com/ssk-it/ssk-terrarium-cadrage/issues/47' }
