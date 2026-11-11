@@ -12,6 +12,7 @@ liens:
   - { tag: pull_request, nom: 'sterrarium-cadrage#13', url: 'https://github.com/sskorupski/sterrarium-cadrage/pull/13' }
   - { tag: issue_github, nom: 'ssk-terrarium#28', url: 'https://github.com/sskorupski/ssk-terrarium/issues/28' }
   - { tag: issue_github, nom: 'ssk-it-infra#49', url: 'https://github.com/ssk-it/ssk-it-infra/issues/49' }
+  - { tag: pull_request, nom: 'ssk-it-infra#53', url: 'https://github.com/ssk-it/ssk-it-infra/pull/53' }
   - { tag: issue_github, nom: 'sterrarium#18', url: 'https://github.com/sskorupski/sterrarium/issues/18' }
 impacts:
   - { regle: RG-alertes-sur-telephone, operation: cree }
@@ -58,7 +59,7 @@ Ce qu'on cherche :
 2. Dans sterrarium, sur le bureau ou sur le téléphone, il ouvre le réglage des alertes. Il y voit chaque alerte, activée ou non, ses seuils et son délai, tels que le régulateur les publie. Il en coupe une, ou change un seuil ; l'application envoie la commande, et le réglage accepté apparaît dans l'état suivant, sur ses deux appareils.
 3. Un réglage hors bornes est refusé en entier par le régulateur, avec sa raison sur `event`, et l'application la montre.
 4. La nuit, la SHT45 se tait. Deux minutes plus tard, la DHT11 prend le relais : son téléphone, en veille, reçoit « Sonde sht45 (intérieure) en défaut : muet. La régulation continue sur l'autre sonde ». Les deux sondes tombent : il reçoit « Défaut capteur : chauffage et pompe coupés ».
-5. Le Wi-Fi de la maison tombe. 90 secondes après le dernier état, il reçoit « Le terrarium ne donne plus de nouvelles ». Quand l'état revient, un message dit que c'est fini.
+5. Le Wi-Fi de la maison tombe. 90 secondes sans état déclenchent le silence, et il reçoit « Le terrarium ne donne plus de nouvelles » deux minutes et demie à trois minutes après le dernier état : la supervision ajoute sa propre latence au délai. Tant que dure le silence, rien d'autre ne lui est dit de ce régulateur. Quand l'état revient, un message dit que c'est fini.
 6. En mode `HIBERNATION`, le bac est à 5 °C : rien ne sonne. En mode `ACTIF`, il reste sous 15 °C pendant 10 minutes : il reçoit une alerte de température basse.
 7. Il a désactivé la mise en sécurité. Il en reçoit un rappel, puis un toutes les 12 heures tant qu'elle reste désactivée. Le rappel ne réarme rien.
 8. Le cluster ssk-it-01 tombe : aucune alerte ne part, pas même celle du silence. C'est la limite de ce cadrage (voir l'ADR).
@@ -85,7 +86,9 @@ Chaque alerte nomme le régulateur concerné. Elle part si elle est activée, av
 
 Une mesure rejetée, publiée à `null`, n'est jamais hors plage : c'est le défaut de sonde qui la signale. La coupure par le substrat n'est pas une panne et ne déclenche aucune alerte (RG-coupure-par-le-substrat).
 
-Une alerte part une fois quand sa condition apparaît. Elle se rappelle toutes les 12 heures tant que la condition dure, et un message dit quand elle a cessé. Le redémarrage n'a pas de durée : il part une fois.
+Une alerte part une fois quand sa condition apparaît. Elle se rappelle toutes les 12 heures tant que la condition dure, et un message dit quand elle a cessé. Le redémarrage n'a pas de durée : il part une fois. Entre une condition et son message s'écoulent une à deux minutes, la latence de l'historique et de l'envoi.
+
+Un régulateur silencieux ne dit plus rien de son état : tant que dure son silence, ses autres alertes gardent le dernier état connu et se taisent, leur fin comprise, sauf le redémarrage. Au retour des états, une alerte encore vraie et pas encore annoncée part ; une alerte qui a cessé pendant le silence s'achève sans message. De même, quand le défaut d'une sonde devient un défaut capteur, la fin du premier se tait : la sonde n'est pas rétablie.
 
 Les alertes passent par un serveur ntfy hébergé sur ssk-it-01, sur un sujet que seul un compte autorisé peut lire, sans accès anonyme. L'application ntfy du téléphone les reçoit par une connexion qu'elle tient ouverte.
 
@@ -115,7 +118,7 @@ Les réglages, leurs valeurs par défaut et leurs bornes :
 - **les seuils d'humidité de l'air**, en % entiers, vont de 0 à 100 %. Ils valent 60 et 95 % par défaut, et le seuil bas reste strictement sous le seuil haut.
 - **le délai de la température et celui de l'humidité** se choisissent chacun parmi 5, 10, 15, 30, 60 et 120 minutes. Ils valent 10 et 30 minutes par défaut.
 
-Les délais se choisissent dans une liste fermée, pas dans un intervalle. L'évaluateur des alertes fixe la durée d'une condition à l'écriture de la règle : il y a une règle par délai admis, et un délai libre n'en aurait aucune. Le rappel de 12 heures n'est pas un réglage.
+Les délais se choisissent dans une liste fermée, pas dans un intervalle. Pour la température et l'humidité, l'évaluateur des alertes fixe la durée d'une condition à l'écriture de la règle : il y a une règle par délai admis, et un délai libre n'en aurait aucune. Le silence, lui, compare le temps écoulé depuis le dernier état à son délai réglé : une seule règle couvre sa liste. Un délai publié hors de sa liste vaut le délai par défaut. Le rappel de 12 heures n'est pas un réglage.
 
 Une commande partielle ne change que ce qu'elle nomme. Une commande dont une valeur sort de ces bornes, ou qui est mal formée, est refusée en entier, avec sa raison sur `event`, et rien n'en est appliqué. Les bornes sont des constantes du firmware, publiées dans `state` (RG-topics-mqtt).
 
