@@ -23,7 +23,7 @@ impacts:
 
 La coupure par le substrat protège le substrat où vivent les escargots : sa sonde, côté chaud, coupe le chauffage à 24 °C et ne le rend que sous 18,5 °C. Ces deux seuils sont des constantes du firmware ([ssk-terrarium-cadrage#2026-005](https://ssk-canon.s3-website.fr-par.scw.cloud/ssk-it/ssk-terrarium-cadrage/cadrages/2026-005)), et la changer demande de recompiler. Le propriétaire veut la régler depuis l'application, comme la consigne : des seuils pour le jour et pour la nuit, le comportement quand la sonde se tait, et la possibilité de s'en passer. Il veut aussi voir dans l'historique quand elle a coupé, et sous quels seuils.
 
-Cela rouvre ce que 2026-005 et 2026-002 avaient fermé : en phase 1, sans limiteur matériel (sskorupski/ssk-terrarium#9, reporté), la coupure est la seule borne de température du substrat, et RG-reglages-bornes la mettait hors de portée de toute commande. Ce cadrage la rend réglable **avec des garde-fous**, choisis par le propriétaire le 13 novembre 2026 : des bornes compilées que rien ne déplace, un écart de reprise qui empêche l'oscillation, un plancher qui empêche le gel, et une désactivation qui se voit toujours.
+Cela rouvre ce que 2026-005 et 2026-002 avaient fermé : en phase 1, sans limiteur matériel (sskorupski/ssk-terrarium#9, reporté), la coupure est la seule borne de température du substrat, et RG-reglages-bornes la mettait hors de portée de toute commande. Ce cadrage la rend réglable **avec des garde-fous**, choisis par le propriétaire le 13 novembre 2026 : des bornes compilées que rien ne déplace, un écart de reprise qui empêche l'oscillation, un plancher qui empêche le gel, et une désactivation qui se voit toujours. Les relevés des 24 heures précédant le 13 novembre ont ajouté une demande : ralentir la chauffe à l'approche du seuil, plutôt que de couper net et laisser l'air sans chauffe pendant des heures (décision `06-zone-d-approche`).
 
 | # | Objectif | Critère de réussite |
 | --- | --- | --- |
@@ -31,6 +31,7 @@ Cela rouvre ce que 2026-005 et 2026-002 avaient fermé : en phase 1, sans limite
 | S2 | Ne pas perdre la protection par erreur | Aucun réglage n'admet une coupure au-delà de 28 °C, une reprise à moins de 2 °C sous la coupure, ni un maintien qui laisse l'air sous 4 °C ; une désactivation se publie, s'annonce et s'historise |
 | S3 | Ne rien changer pour qui ne règle rien | Sans réglage, le régulateur fait exactement ce que fait 2026-005 |
 | S4 | Lire la coupure dans l'historique | Les résumés portent la part du temps coupée et les seuils qui s'appliquaient, sans que l'application recalcule rien |
+| S5 | Lisser les pics du substrat sans laisser l'air chuter | Une zone d'approche réglable ralentit la chauffe avant le seuil de coupure, au lieu de la couper net |
 
 ### Ce que le référentiel disait déjà
 
@@ -61,7 +62,8 @@ Une alerte sur téléphone à la désactivation relève de 2026-009, encore en c
 4. Il essaie une reprise à 23 °C pour une coupure à 24 °C : refusé en entier, `securite_substrat invalide`, rien n'est appliqué.
 5. Il passe la sonde muette en `maintien`. La sonde se débranche pendant une coupure : la coupure tient. En janvier, l'air descend à 3,9 °C : la coupure se lève, et le chauffage reprend sur l'air ; l'élevage ne gèle pas.
 6. Il désactive la coupure pour changer le substrat. Le régulateur publie `"active":false`, `"seuils_substrat":null`, un `event` `securite-substrat`, l'annonce sur la liaison série. Après une coupure de courant, elle est toujours désactivée, et toujours affichée comme telle.
-7. Dans l'historique, la nuit de l'étape 3 montre une part de coupure par fenêtre, et les seuils de 22 et 18 °C ; les fenêtres où la coupure était désactivée n'ont pas de seuils.
+7. Il règle une approche de 2 °C et une reprise de jour à 22 °C. L'après-midi, le substrat passe 22 °C : l'air demande toujours de la chauffe, mais le chauffage ne tourne plus qu'une part de chaque tranche de 10 minutes, la moitié à 23 °C. Le substrat se stabilise vers 23 °C sans toucher 24 °C, et l'air reçoit encore de la chaleur quand le garage se refroidit.
+8. Dans l'historique, la nuit de l'étape 3 montre une part de coupure par fenêtre, et les seuils de 22 et 18 °C ; les fenêtres où la coupure était désactivée n'ont pas de seuils.
 
 ## Questions ouvertes
 
@@ -70,6 +72,7 @@ Ces valeurs sont des propositions de ce cadrage, à confirmer par le propriétai
 - **Les bornes** : coupure de 20 à 28 °C, reprise au moins 2 °C sous la coupure et pas sous 15 °C, délai de sonde muette de 1 à 30 minutes. 28 °C est la proposition : 2026-005 tenait 24 °C pour le seuil sûr, et 2026-002 tenait 24 °C pour l'alerte haute de l'air.
 - **Le plancher de `maintien`** : 4 °C, le bas du hors-gel. Le haut du hors-gel, 6 °C, lèverait la coupure plus tôt.
 - **La désactivation au redémarrage** : enregistrée (décision `01-interrupteur`). Une désactivation qui se lève d'elle-même au redémarrage, ou au bout d'un temps, est l'option écartée la plus proche.
+- **L'approche** : de 0 à 4 °C, 0 par défaut pour que rien ne change sans réglage, avec des tranches de 10 minutes. Une approche de 2 °C par défaut lisserait d'emblée, mais changerait le comportement des régulateurs déjà en place.
 - **Une alerte à la désactivation**, si 2026-009 se livre : la coupure n'y est pas une panne ; une coupure désactivée pourrait en être une.
 
 ## Énoncés
@@ -82,6 +85,8 @@ Active, quand la sonde du substrat rend une mesure valide qui atteint le seuil d
 
 Les seuils se règlent pour le jour et pour la nuit (RG-jour-et-nuit), et valent dans tous les modes qui chauffent : `ACTIF`, `PLAGES` et `HIBERNATION`. Tant que l'heure n'est pas connue, ce sont ceux du jour. Par défaut, la coupure est à 24 °C et la reprise à 18,5 °C, le jour comme la nuit. Le seuil de coupure va de 20 à 28 °C, et la reprise reste au moins 2 °C en dessous, sans descendre sous 15 °C. Les seuils ne dépendent pas de la consigne. Au passage du jour à la nuit, ou de la nuit au jour, la coupure se juge sur les seuils du nouveau moment dès la mesure suivante : une coupure en cours se lève si la mesure est déjà sous la nouvelle reprise, et une mesure qui atteint la nouvelle coupure coupe.
 
+Sous le seuil de coupure, une zone d'approche ralentit la chauffe. Sa largeur se règle de 0 à 4 °C, la même le jour et la nuit, et vaut 0 par défaut : la coupure reste alors franche. Quand une mesure valide du substrat est dans la zone, de `coupure − approche` inclus à `coupure` exclu, et que le mode demande de chauffer, le chauffage ne tourne qu'une part de chaque tranche de 10 minutes, en début de tranche : `(coupure − mesure) / approche`, arrondie à la minute. Cette part vaut 100 % à l'entrée de la zone et diminue jusqu'à 0 au seuil. Elle se calcule au début de chaque tranche, sur la dernière mesure valide. Hors de la zone, le chauffage suit son mode sans ralentir. Sans mesure valide, désactivée ou pendant une coupure, l'approche ne s'applique pas. Une tranche ralentie ne compte pas comme une chauffe continue au sens de RG-chauffe-continue-bornee : le chauffage s'y arrête.
+
 Une mesure est valide quand la sonde répond, hors de sa valeur de mise sous tension (85 °C), et qu'elle est comprise entre −20 et 60 °C. Sans sonde, la coupure ne s'applique jamais.
 
 Si la sonde se tait ou rend des mesures invalides pendant une coupure, le comportement réglé s'applique :
@@ -93,15 +98,15 @@ Désactivée, la coupure ne s'applique jamais, comme sans sonde : une coupure en
 
 La coupure en cours n'est pas gardée en mémoire : après un redémarrage, elle ne revient que sur une mesure qui atteint le seuil de coupure du moment.
 
-La coupure prime sur le mode et sur la reprise qui suit la pause de RG-chauffe-continue-bornee ; elle n'est pas un défaut, et n'allume pas la LED d'état. Son entrée et sa sortie sont annoncées sur la liaison série, son état publié sur `state` (`coupure_substrat`), avec ses réglages (`securite_substrat`) et les seuils qui s'appliquent (`seuils_substrat`) ; elle est historisée (RG-historique-des-mesures).
+La coupure prime sur le mode et sur la reprise qui suit la pause de RG-chauffe-continue-bornee ; elle n'est pas un défaut, et n'allume pas la LED d'état. Son entrée et sa sortie sont annoncées sur la liaison série, son état publié sur `state` (`coupure_substrat`), avec ses réglages (`securite_substrat`), les seuils qui s'appliquent (`seuils_substrat`) et la part de chauffe que permet l'approche (`part_substrat`) ; elle est historisée (RG-historique-des-mesures).
 
 Le substrat se mesure côté chaud, près des câbles : il peut atteindre le seuil de coupure avant que l'air atteigne la consigne, et l'air reste alors sous la consigne jusqu'à ce que le substrat soit redescendu sous la reprise. Le propriétaire a fait passer le substrat avant l'air, et a voulu en régler les seuils, de jour et de nuit, et pouvoir s'en passer ([ssk-terrarium-cadrage#2026-018](https://ssk-canon.s3-website.fr-par.scw.cloud/ssk-it/ssk-terrarium-cadrage/cadrages/2026-018)). La coupure passe par le même firmware et le même relais que la régulation : elle ne remplace pas le limiteur matériel reporté par la décision `06-protection-contre-la-surchauffe` de 2026-001.
 
-Ce que la règle protège : le chauffage ne cuit pas le substrat où vivent les escargots tant que la coupure est active ; un réglage ne peut ni porter la coupure au-delà de 28 °C ni la faire osciller autour de son seuil ; une coupure désactivée se voit ; une sonde absente ou en panne n'empêche pas de chauffer l'air, et, même maintenue, une coupure ne laisse pas l'élevage geler.
+Ce que la règle protège : le chauffage ne cuit pas le substrat où vivent les escargots tant que la coupure est active ; un réglage ne peut ni porter la coupure au-delà de 28 °C ni la faire osciller autour de son seuil ; l'approche laisse le substrat se stabiliser sous son seuil au lieu de le franchir, et l'air garder une chauffe réduite ; une coupure désactivée se voit ; une sonde absente ou en panne n'empêche pas de chauffer l'air, et, même maintenue, une coupure ne laisse pas l'élevage geler.
 
 ### RG-reglages-bornes
 
-La consigne et l'hystérésis du chauffage, utilisées en mode `ACTIF` et pendant les plages du mode `PLAGES`, les plages horaires du mode `PLAGES`, le fuseau horaire, le rôle de chaque sonde d'air, la combinaison des sondes intérieures, le jour et la nuit (RG-jour-et-nuit), les réglages de la ventilation (RG-ventilation-periodique), et la coupure de sécurité par le substrat (RG-coupure-par-le-substrat) — son activation, ses seuils de jour et de nuit et son comportement quand la sonde se tait — sont réglables à distance et par la liaison série. Ils le sont dans des bornes fixées à la compilation, qu'aucune commande ni aucun réglage enregistré ne peut changer :
+La consigne et l'hystérésis du chauffage, utilisées en mode `ACTIF` et pendant les plages du mode `PLAGES`, les plages horaires du mode `PLAGES`, le fuseau horaire, le rôle de chaque sonde d'air, la combinaison des sondes intérieures, le jour et la nuit (RG-jour-et-nuit), les réglages de la ventilation (RG-ventilation-periodique), et la coupure de sécurité par le substrat (RG-coupure-par-le-substrat) — son activation, ses seuils de jour et de nuit, son approche et son comportement quand la sonde se tait — sont réglables à distance et par la liaison série. Ils le sont dans des bornes fixées à la compilation, qu'aucune commande ni aucun réglage enregistré ne peut changer :
 
 - consigne de 15 à 22 °C, hystérésis de 0,2 à 2 °C, et consigne plus hystérésis strictement sous 24 °C, le seuil d'alerte haute de l'air ;
 - de 0 à 4 plages, chacune conforme à RG-chauffage-par-plages ;
@@ -112,7 +117,7 @@ La consigne et l'hystérésis du chauffage, utilisées en mode `ACTIF` et pendan
 - pour la ventilation de jour et de nuit, le mode `metronome` ou `rubato`, une durée de 1 à 30 minutes et une période de 15 à 240 minutes, la durée strictement sous la période, et un écart de 10 à 50 % ;
 - pour l'aération d'hibernation, une heure `HH:MM` et une durée de 1 à 30 minutes ;
 - pour l'option saturation, le comportement `aeration` ou `continu`, une humidité de 80 à 100 % HR, une attente de 1 à 60 minutes, une durée de 1 à 30 minutes et une pause de 15 à 240 minutes ;
-- pour la coupure par le substrat, l'activation `true` ou `false` ; pour le jour et pour la nuit, un seuil de coupure de 20 à 28 °C et un seuil de reprise de 15 °C au seuil de coupure moins 2 °C, au dixième de degré ; pour la sonde muette, le comportement `reprise-air` ou `maintien`, et un délai de 1 à 30 minutes.
+- pour la coupure par le substrat, l'activation `true` ou `false` ; pour le jour et pour la nuit, un seuil de coupure de 20 à 28 °C et un seuil de reprise de 15 °C au seuil de coupure moins 2 °C, au dixième de degré ; pour la sonde muette, le comportement `reprise-air` ou `maintien`, et un délai de 1 à 30 minutes ; une approche de 0 à 4 °C, au dixième de degré.
 
 Les durées, périodes, attentes et pauses sont en minutes entières, l'écart et l'humidité en pour cent entiers.
 
@@ -122,7 +127,7 @@ Ne sont pas des réglages, et aucune commande ne les modifie :
 
 - le hors-gel de `HIBERNATION` (4-6 °C) ;
 - le plancher hors plage de `PLAGES` (12-14 °C) ;
-- les bornes des seuils de la coupure par le substrat (20-28 °C, 15 °C, l'écart de 2 °C) et le plancher de 4 °C qui lève une coupure maintenue (RG-coupure-par-le-substrat) ;
+- les bornes des seuils de la coupure par le substrat (20-28 °C, 15 °C, l'écart de 2 °C) le plancher de 4 °C qui lève une coupure maintenue, et la tranche de 10 minutes de l'approche (RG-coupure-par-le-substrat) ;
 - la durée maximale de chauffe continue ;
 - les plages de rejet d'une mesure et le délai de 2 minutes avant un défaut (RG-capteur-en-defaut) ;
 - l'écart minimal de 12 heures et le repli de 24 heures de l'aération d'hibernation (RG-ventilation-periodique) ;
@@ -145,7 +150,7 @@ Sont enregistrés en mémoire non volatile, à chaque changement :
 - le rôle de chaque sonde d'air et la combinaison des sondes intérieures ;
 - le jour et la nuit ;
 - les réglages de la ventilation : jour, nuit, hibernation et option saturation ;
-- les réglages de la coupure par le substrat : activation, seuils de jour et de nuit, comportement sur sonde muette.
+- les réglages de la coupure par le substrat : activation, seuils de jour et de nuit, approche, comportement sur sonde muette.
 
 Au démarrage, le régulateur reprend le mode enregistré. S'il n'en trouve aucun de valide (premier démarrage, mémoire effacée ou corrompue), il démarre en `MAINTENANCE`, tout coupé, jusqu'à ce qu'on choisisse un mode.
 
@@ -157,7 +162,7 @@ Il reprend chacun des réglages enregistrés — consigne et hystérésis ensemb
 - `sht45` intérieure, `dht11` extérieure et la combinaison `priorite-sht45` ;
 - le mode `metronome` et le jour `08:00-21:00` ;
 - pour la ventilation de jour comme de nuit, le mode `metronome`, 5 minutes toutes les 60 minutes, un écart de 30 % ; l'aération d'hibernation à 13:00 pendant 5 minutes ; l'option saturation inactive, en `aeration`, à 95 % HR, 10 minutes d'attente, 5 minutes d'aération et 60 minutes de pause ;
-- la coupure par le substrat active, à 24 °C et 18,5 °C le jour comme la nuit, avec le comportement `reprise-air` et un délai de 2 minutes : ce qu'elle faisait avant de devenir réglable.
+- la coupure par le substrat active, à 24 °C et 18,5 °C le jour comme la nuit, sans approche, avec le comportement `reprise-air` et un délai de 2 minutes : ce qu'elle faisait avant de devenir réglable.
 
 Un réglage de ventilation enregistré sous la forme de 2026-013 (durée, période et heure seules) n'est pas repris : le régulateur prend celui du firmware, qui lui est égal par défaut. Le décompte des aérations, l'heure de la dernière et l'attente de l'option saturation ne sont pas enregistrés : ils repartent du démarrage (RG-ventilation-periodique). Une coupure par le substrat en cours n'est pas enregistrée (RG-coupure-par-le-substrat). Les autres seuils restent ceux du firmware jusqu'à ce qu'ils deviennent réglables.
 
@@ -176,11 +181,11 @@ Le régulateur publie et reçoit sous le préfixe `ssk-terrarium/<id>/`, où `<i
 
 | Sujet | Sens | Contenu |
 | --- | --- | --- |
-| `state` | publié, retenu, toutes les 30 s | JSON : la mesure de l'air retenue pour réguler (`air`) et la sonde qui la donne (`sonde_retenue`), chaque sonde d'air (`sondes`), la mesure du substrat (`null` si invalides ou rejetées), la cause du rejet de la mesure de l'air (`cause_mesure_air`), la mise en sécurité (`mise_en_securite`), la combinaison des sondes (`combinaison`), l'état de chaque sortie, le mode, la consigne, l'hystérésis, les plages, le fuseau, le jour et la nuit (`jour_nuit`), le jour d'aujourd'hui (`jour_aujourdhui`) et le moment de la journée (`moment`), les réglages de la ventilation (`ventilation`) et l'aération de saturation en cours ou non (`aeration_saturation`), l'heure connue ou non, en plage ou non, le défaut capteur, la coupure par le substrat ou non (`coupure_substrat`), ses réglages (`securite_substrat`) et les seuils qui s'appliquent à l'instant (`seuils_substrat`), le temps depuis le démarrage, la version du firmware, et les bornes des réglages (`bornes`) |
+| `state` | publié, retenu, toutes les 30 s | JSON : la mesure de l'air retenue pour réguler (`air`) et la sonde qui la donne (`sonde_retenue`), chaque sonde d'air (`sondes`), la mesure du substrat (`null` si invalides ou rejetées), la cause du rejet de la mesure de l'air (`cause_mesure_air`), la mise en sécurité (`mise_en_securite`), la combinaison des sondes (`combinaison`), l'état de chaque sortie, le mode, la consigne, l'hystérésis, les plages, le fuseau, le jour et la nuit (`jour_nuit`), le jour d'aujourd'hui (`jour_aujourdhui`) et le moment de la journée (`moment`), les réglages de la ventilation (`ventilation`) et l'aération de saturation en cours ou non (`aeration_saturation`), l'heure connue ou non, en plage ou non, le défaut capteur, la coupure par le substrat ou non (`coupure_substrat`), ses réglages (`securite_substrat`), les seuils qui s'appliquent à l'instant (`seuils_substrat`) et la part de chauffe que permet l'approche (`part_substrat`), le temps depuis le démarrage, la version du firmware, et les bornes des réglages (`bornes`) |
 | `event` | publié | JSON : changement de mode, réglage accepté ou refusé avec sa raison, démarrage, chauffe de la SHT45, activation ou désactivation de la coupure par le substrat |
 | `status` | publié, retenu | `en-ligne` à la connexion, `hors-ligne` comme dernière volonté |
 | `cmd/mode` | reçu | `ACTIF`, `PLAGES`, `HIBERNATION` ou `MAINTENANCE` |
-| `cmd/config` | reçu | JSON partiel. `consigne`, `hysteresis` : en °C. `plages` : liste de 0 à 4 chaînes `HH:MM-HH:MM`, qui remplace la liste en place. `fuseau` : chaîne POSIX TZ. `mise_en_securite` : objet partiel `{"air":true\|false}`. `sondes` : objet partiel `{"sht45":"interieure"\|"exterieure","dht11":…}`. `combinaison` : `priorite-sht45`, `priorite-dht11`, `moyenne` ou `plus-froide`. `jour_nuit` : objet complet, qui remplace celui en place. `ventilation` : objet partiel à deux niveaux, `{"jour":{…},"nuit":{…},"hibernation":{…},"saturation":{…}}`, chacun partiel. `securite_substrat` : objet partiel à deux niveaux, `{"active":…,"jour":{…},"nuit":{…},"sonde_muette":{…}}`, chacun partiel |
+| `cmd/config` | reçu | JSON partiel. `consigne`, `hysteresis` : en °C. `plages` : liste de 0 à 4 chaînes `HH:MM-HH:MM`, qui remplace la liste en place. `fuseau` : chaîne POSIX TZ. `mise_en_securite` : objet partiel `{"air":true\|false}`. `sondes` : objet partiel `{"sht45":"interieure"\|"exterieure","dht11":…}`. `combinaison` : `priorite-sht45`, `priorite-dht11`, `moyenne` ou `plus-froide`. `jour_nuit` : objet complet, qui remplace celui en place. `ventilation` : objet partiel à deux niveaux, `{"jour":{…},"nuit":{…},"hibernation":{…},"saturation":{…}}`, chacun partiel. `securite_substrat` : objet partiel à deux niveaux, `{"active":…,"approche":…,"jour":{…},"nuit":{…},"sonde_muette":{…}}`, chacun partiel |
 
 `air` publie la mesure de l'air de RG-sondes-d-air, `{"temperature":…,"humidite":…}`, à `null` quand aucune sonde intérieure n'est acceptée. `sonde_retenue` vaut alors `null`. Sinon, elle vaut `sht45` ou `dht11` pour la sonde dont la mesure est retenue, ou `moyenne` quand deux sondes sont moyennées.
 
@@ -192,9 +197,9 @@ Le régulateur publie et reçoit sous le préfixe `ssk-terrarium/<id>/`, où `<i
 
 `ventilation` publie les réglages en place de RG-ventilation-periodique : `{"jour":{"mode":…,"duree":…,"periode":…,"ecart":…},"nuit":{…},"hibernation":{"heure":"HH:MM","duree":…},"saturation":{"active":…,"comportement":…,"humidite":…,"attente":…,"duree":…,"pause":…}}`. Ce que fait le ventilateur à l'instant se lit dans `sorties.ventilateur`, et `aeration_saturation` dit si c'est l'option saturation qui le fait tourner.
 
-`securite_substrat` publie les réglages de RG-coupure-par-le-substrat : `{"active":true,"jour":{"coupure":24.0,"reprise":18.5},"nuit":{"coupure":24.0,"reprise":18.5},"sonde_muette":{"comportement":"reprise-air","delai":2}}`, seuils en °C à une décimale, délai en minutes. `seuils_substrat` publie ceux du moment de la journée, `{"coupure":…,"reprise":…}`, ou `null` quand la coupure est désactivée : c'est la seule valeur à lire pour savoir ce qui s'applique. `coupure_substrat` reste le booléen qu'il était, toujours `false` quand la coupure est désactivée.
+`securite_substrat` publie les réglages de RG-coupure-par-le-substrat : `{"active":true,"approche":0.0,"jour":{"coupure":24.0,"reprise":18.5},"nuit":{"coupure":24.0,"reprise":18.5},"sonde_muette":{"comportement":"reprise-air","delai":2}}`, seuils et approche en °C à une décimale, délai en minutes. `seuils_substrat` publie ceux du moment de la journée, `{"coupure":…,"reprise":…}`, ou `null` quand la coupure est désactivée : c'est la seule valeur à lire pour savoir ce qui s'applique. `part_substrat` est la part de chaque tranche de 10 minutes où l'approche laisse chauffer, de 0 à 1 au centième : 1 hors de la zone, 0 pendant une coupure, et `null` quand la coupure est désactivée ou qu'aucune mesure valide du substrat n'existe. Le chauffage ne tourne que si le mode le demande : `part_substrat` dit ce que le substrat permet, `sorties.chauffage` ce qui se passe. `coupure_substrat` reste le booléen qu'il était, toujours `false` quand la coupure est désactivée.
 
-Les bornes publiées dans `state` sont celles de RG-reglages-bornes, lues des constantes de compilation du firmware : `"bornes":{"consigne":[min,max],"hysteresis":[min,max],"somme_max":…,"plages_max":…,"fuseau_max":…,"combinaisons":[…],"saisons_max":…,"ventilation":{"duree":[min,max],"periode":[min,max],"ecart":[min,max],"humidite":[min,max],"attente":[min,max],"pause":[min,max]},"substrat":{"coupure":[min,max],"reprise_min":…,"ecart_min":…,"delai":[min,max],"comportements":[…]}}`. `consigne` et `hysteresis` sont les intervalles admis, bornes comprises, en °C à une décimale. Consigne plus hystérésis doit rester strictement sous `somme_max`. `plages_max` est le nombre maximal de plages, et `fuseau_max` la longueur maximale d'un fuseau POSIX TZ, en entiers. `combinaisons` est la liste des combinaisons admises. `saisons_max` est le nombre maximal de saisons. Les intervalles de `ventilation` sont admis bornes comprises, en minutes ou en pour cent entiers ; `duree` vaut pour la ventilation de jour et de nuit, l'aération d'hibernation et l'option saturation ; une durée de ventilation doit rester strictement sous sa période. Dans `substrat`, `coupure` est l'intervalle admis d'un seuil de coupure, en °C à une décimale, `reprise_min` le plus bas seuil de reprise, et `ecart_min` l'écart minimal entre la coupure et la reprise d'un même moment : la reprise doit rester au plus à `coupure − ecart_min`. `delai` est en minutes entières. Aucune commande ne règle ces bornes.
+Les bornes publiées dans `state` sont celles de RG-reglages-bornes, lues des constantes de compilation du firmware : `"bornes":{"consigne":[min,max],"hysteresis":[min,max],"somme_max":…,"plages_max":…,"fuseau_max":…,"combinaisons":[…],"saisons_max":…,"ventilation":{"duree":[min,max],"periode":[min,max],"ecart":[min,max],"humidite":[min,max],"attente":[min,max],"pause":[min,max]},"substrat":{"coupure":[min,max],"reprise_min":…,"ecart_min":…,"delai":[min,max],"approche":[min,max],"comportements":[…]}}`. `consigne` et `hysteresis` sont les intervalles admis, bornes comprises, en °C à une décimale. Consigne plus hystérésis doit rester strictement sous `somme_max`. `plages_max` est le nombre maximal de plages, et `fuseau_max` la longueur maximale d'un fuseau POSIX TZ, en entiers. `combinaisons` est la liste des combinaisons admises. `saisons_max` est le nombre maximal de saisons. Les intervalles de `ventilation` sont admis bornes comprises, en minutes ou en pour cent entiers ; `duree` vaut pour la ventilation de jour et de nuit, l'aération d'hibernation et l'option saturation ; une durée de ventilation doit rester strictement sous sa période. Dans `substrat`, `coupure` est l'intervalle admis d'un seuil de coupure, en °C à une décimale, `reprise_min` le plus bas seuil de reprise, et `ecart_min` l'écart minimal entre la coupure et la reprise d'un même moment : la reprise doit rester au plus à `coupure − ecart_min`. `delai` est en minutes entières, `approche` en °C à une décimale. Aucune commande ne règle ces bornes.
 
 Chaque chauffe de la SHT45 (RG-chauffe-de-la-sht45) publie sur `event` : `{"evenement":"chauffe-sonde","sonde":"sht45","motif":…}`, où `motif` vaut `humidite-haute` ou `humidite-hors-plage`. Le message ne porte pas l'humidité qui l'a déclenchée : une valeur rejetée ne se publie jamais, et la mesure acceptée se lit déjà dans `state`. Une chauffe ne change rien à `state` : `air` et `sondes` y publient la mesure du dernier relevé, jamais celle que la sonde rend à la fin de la chauffe.
 
@@ -228,6 +233,7 @@ Telegraf lit l'état sous le compte `historique`, qui ne peut rien commander (RG
 - le défaut capteur, la pause de chauffe, l'heure connue et la plage en cours, à 1 ou 0 ;
 - la coupure par le substrat, `terrarium_coupure_substrat{id}`, à 1 quand elle coupe le chauffage et à 0 sinon, et son activation, `terrarium_securite_substrat_active{id}`, à 1 ou 0 ;
 - les seuils de coupure et de reprise qui s'appliquent, tels que l'état les publie dans `seuils_substrat`, `terrarium_substrat_coupure{id}` et `terrarium_substrat_reprise{id}`, en °C. Aucun point quand la coupure est désactivée : `seuils_substrat` vaut alors `null` ;
+- la part de chauffe que permet l'approche, `terrarium_part_substrat{id}`, de 0 à 1, telle que l'état la publie dans `part_substrat` ; aucun point quand elle vaut `null` ;
 - le temps depuis le démarrage ;
 - et ce que les alertes demandent en plus ([ssk-terrarium-cadrage#2026-009](https://ssk-canon.s3-website.fr-par.scw.cloud/ssk-it/ssk-terrarium-cadrage/cadrages/2026-009)).
 
@@ -266,7 +272,8 @@ Un résumé est un objet JSON. Ses champs :
 - `sorties.chauffage`, `sorties.eclairage`, `sorties.pompe` et `sorties.ventilateur`, chacun un tableau ;
 - `consigne_ventilation`, la part du temps d'aération que prévoit le rythme de ventilation en place (RG-historique-des-mesures), sous la même forme que `consigne` ;
 - `coupure_substrat`, un tableau, sous la même forme qu'une sortie : la part des états reçus où la coupure par le substrat coupait le chauffage ;
-- `seuils_substrat.coupure` et `seuils_substrat.reprise`, les seuils qui s'appliquaient, sous la même forme que `consigne`. Une fenêtre où la coupure était désactivée de bout en bout vaut `null`, avec 0 dans `n` : rien ne s'appliquait.
+- `seuils_substrat.coupure` et `seuils_substrat.reprise`, les seuils qui s'appliquaient, sous la même forme que `consigne`. Une fenêtre où la coupure était désactivée de bout en bout vaut `null`, avec 0 dans `n` : rien ne s'appliquait ;
+- `part_substrat`, la part de chauffe que permettait l'approche, sous la même forme que `consigne`.
 
 Un exemple, réduit ici à quatre fenêtres et à deux champs :
 
