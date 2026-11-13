@@ -64,6 +64,10 @@ Ce qu'on cherche :
 7. Il a désactivé la mise en sécurité. Il en reçoit un rappel, puis un toutes les 12 heures tant qu'elle reste désactivée. Le rappel ne réarme rien.
 8. Le cluster ssk-it-01 tombe : aucune alerte ne part, pas même celle du silence. C'est la limite de ce cadrage (voir l'ADR).
 
+### Reprise de 2026-018
+
+[ssk-terrarium-cadrage#2026-018](https://ssk-canon.s3-website.fr-par.scw.cloud/ssk-it/ssk-terrarium-cadrage/cadrages/2026-018), livré le 13 novembre 2026, a réécrit RG-reglages-bornes, RG-mode-au-demarrage et RG-topics-mqtt pour rendre réglable la coupure par le substrat. Les énoncés ci-dessous partent de ce texte livré et y ajoutent le réglage des alertes, pour que la fusion de ce cadrage n'efface pas les réglages de la coupure. La coupure par le substrat n'y devient pas une alerte.
+
 ## Énoncés
 
 ### RG-alertes-sur-telephone
@@ -157,11 +161,11 @@ Le régulateur publie et reçoit sous le préfixe `ssk-terrarium/<id>/`, où `<i
 
 | Sujet | Sens | Contenu |
 | --- | --- | --- |
-| `state` | publié, retenu, toutes les 30 s | JSON : la mesure de l'air retenue pour réguler (`air`) et la sonde qui la donne (`sonde_retenue`), chaque sonde d'air (`sondes`), la mesure du substrat (`null` si invalides ou rejetées), la cause du rejet de la mesure de l'air (`cause_mesure_air`), la mise en sécurité (`mise_en_securite`), la combinaison des sondes (`combinaison`), l'état de chaque sortie, le mode, la consigne, l'hystérésis, les plages, le fuseau, le jour et la nuit (`jour_nuit`), le jour d'aujourd'hui (`jour_aujourdhui`) et le moment de la journée (`moment`), les réglages de la ventilation (`ventilation`) et l'aération de saturation en cours ou non (`aeration_saturation`), l'heure connue ou non, en plage ou non, le défaut capteur, la pause de chauffe (`pause_chauffage`, RG-chauffe-continue-bornee), la coupure par le substrat ou non (`coupure_substrat`), le temps depuis le démarrage, la version du firmware, le réglage des alertes (`alertes`), et les bornes des réglages (`bornes`) |
-| `event` | publié | JSON : changement de mode, réglage accepté ou refusé avec sa raison, chauffe de la SHT45 |
+| `state` | publié, retenu, toutes les 30 s | JSON : la mesure de l'air retenue pour réguler (`air`) et la sonde qui la donne (`sonde_retenue`), chaque sonde d'air (`sondes`), la mesure du substrat (`null` si invalides ou rejetées), la cause du rejet de la mesure de l'air (`cause_mesure_air`), la mise en sécurité (`mise_en_securite`), la combinaison des sondes (`combinaison`), l'état de chaque sortie, le mode, la consigne, l'hystérésis, les plages, le fuseau, le jour et la nuit (`jour_nuit`), le jour d'aujourd'hui (`jour_aujourdhui`) et le moment de la journée (`moment`), les réglages de la ventilation (`ventilation`) et l'aération de saturation en cours ou non (`aeration_saturation`), l'heure connue ou non, en plage ou non, le défaut capteur, la pause de chauffe (`pause_chauffage`, RG-chauffe-continue-bornee), la coupure par le substrat ou non (`coupure_substrat`), ses réglages (`securite_substrat`), les seuils qui s'appliquent à l'instant (`seuils_substrat`) et la part de chauffe que permet l'approche (`part_substrat`), le temps depuis le démarrage, la version du firmware, le réglage des alertes (`alertes`), et les bornes des réglages (`bornes`) |
+| `event` | publié | JSON : changement de mode, réglage accepté ou refusé avec sa raison, chauffe de la SHT45, activation ou désactivation de la coupure par le substrat |
 | `status` | publié, retenu | `en-ligne` à la connexion, `hors-ligne` comme dernière volonté |
 | `cmd/mode` | reçu | `ACTIF`, `PLAGES`, `HIBERNATION` ou `MAINTENANCE` |
-| `cmd/config` | reçu | JSON partiel. `consigne`, `hysteresis` : en °C. `plages` : liste de 0 à 4 chaînes `HH:MM-HH:MM`, qui remplace la liste en place. `fuseau` : chaîne POSIX TZ. `mise_en_securite` : objet partiel `{"air":true\|false}`. `sondes` : objet partiel `{"sht45":"interieure"\|"exterieure","dht11":…}`. `combinaison` : `priorite-sht45`, `priorite-dht11`, `moyenne` ou `plus-froide`. `jour_nuit` : objet complet, qui remplace celui en place. `ventilation` : objet partiel à deux niveaux, `{"jour":{…},"nuit":{…},"hibernation":{…},"saturation":{…}}`, chacun partiel. `alertes` : objet partiel du réglage des alertes (ci-dessous) |
+| `cmd/config` | reçu | JSON partiel. `consigne`, `hysteresis` : en °C. `plages` : liste de 0 à 4 chaînes `HH:MM-HH:MM`, qui remplace la liste en place. `fuseau` : chaîne POSIX TZ. `mise_en_securite` : objet partiel `{"air":true\|false}`. `sondes` : objet partiel `{"sht45":"interieure"\|"exterieure","dht11":…}`. `combinaison` : `priorite-sht45`, `priorite-dht11`, `moyenne` ou `plus-froide`. `jour_nuit` : objet complet, qui remplace celui en place. `ventilation` : objet partiel à deux niveaux, `{"jour":{…},"nuit":{…},"hibernation":{…},"saturation":{…}}`, chacun partiel. `securite_substrat` : objet partiel à deux niveaux, `{"active":…,"approche":…,"jour":{…},"nuit":{…},"sonde_muette":{…}}`, chacun partiel. `alertes` : objet partiel du réglage des alertes (ci-dessous) |
 
 `air` publie la mesure de l'air de RG-sondes-d-air, `{"temperature":…,"humidite":…}`, à `null` quand aucune sonde intérieure n'est acceptée. `sonde_retenue` vaut alors `null`. Sinon, elle vaut `sht45` ou `dht11` pour la sonde dont la mesure est retenue, ou `moyenne` quand deux sondes sont moyennées.
 
@@ -173,28 +177,33 @@ Le régulateur publie et reçoit sous le préfixe `ssk-terrarium/<id>/`, où `<i
 
 `ventilation` publie les réglages en place de RG-ventilation-periodique : `{"jour":{"mode":…,"duree":…,"periode":…,"ecart":…},"nuit":{…},"hibernation":{"heure":"HH:MM","duree":…},"saturation":{"active":…,"comportement":…,"humidite":…,"attente":…,"duree":…,"pause":…}}`. Ce que fait le ventilateur à l'instant se lit dans `sorties.ventilateur`, et `aeration_saturation` dit si c'est l'option saturation qui le fait tourner.
 
+`securite_substrat` publie les réglages de RG-coupure-par-le-substrat : `{"active":true,"approche":0.0,"jour":{"coupure":24.0,"reprise":18.5},"nuit":{"coupure":24.0,"reprise":18.5},"sonde_muette":{"comportement":"reprise-air","delai":2}}`, seuils et approche en °C à une décimale, délai en minutes. `seuils_substrat` publie ceux du moment de la journée, `{"coupure":…,"reprise":…}`, ou `null` quand la coupure est désactivée : c'est la seule valeur à lire pour savoir ce qui s'applique. `part_substrat` est la part de chaque tranche de 10 minutes où l'approche laisse chauffer, en minutes divisées par 10, de 0 à 1, écrite avec deux décimales (`0.50` pour 5 minutes) : 1 hors de la zone, 0 pendant une coupure, dans la zone la part de la tranche en cours, ou celle qu'une tranche prendrait sur la dernière mesure quand le mode ne demande pas de chauffer, et `null` quand la coupure est désactivée ou qu'aucune mesure valide du substrat n'existe. Le chauffage ne tourne que si le mode le demande : `part_substrat` dit ce que le substrat permet, `sorties.chauffage` ce qui se passe. `coupure_substrat` reste le booléen qu'il était, toujours `false` quand la coupure est désactivée.
+
 `alertes` publie le réglage de RG-reglage-des-alertes, entier, dans la forme que `cmd/config` accepte partielle : `{"silence":{"active":true,"delai_s":90},"defaut_capteur":{"active":true},"defaut_sonde":{"active":true},"temperature":{"active":true,"haute":24.0,"basse":{"actif":15.0,"hors_plage":11.0,"hibernation":3.0},"delai_s":600},"humidite":{"active":true,"basse":60,"haute":95,"delai_s":1800},"securite_desactivee":{"active":true},"pause_chauffage":{"active":true},"redemarrage":{"active":true}}`. `basse.actif` vaut pour `ACTIF` et pour `PLAGES` en plage ou sans heure connue, `basse.hors_plage` pour `PLAGES` hors plage, `basse.hibernation` pour `HIBERNATION` et `MAINTENANCE`. Les délais sont en secondes. Le régulateur n'en fait rien d'autre que de le publier : la supervision le lit pour évaluer les alertes (RG-alertes-sur-telephone).
 
-Les bornes publiées dans `state` sont celles de RG-reglages-bornes et de RG-reglage-des-alertes, lues des constantes de compilation du firmware : `"bornes":{"consigne":[min,max],"hysteresis":[min,max],"somme_max":…,"plages_max":…,"fuseau_max":…,"combinaisons":[…],"saisons_max":…,"ventilation":{"duree":[min,max],"periode":[min,max],"ecart":[min,max],"humidite":[min,max],"attente":[min,max],"pause":[min,max]},"alertes":{"temperature":[min,max],"humidite":[min,max],"delais_s":[…],"delais_silence_s":[…]}}`. `consigne` et `hysteresis` sont les intervalles admis, bornes comprises, en °C à une décimale. Consigne plus hystérésis doit rester strictement sous `somme_max`. `plages_max` est le nombre maximal de plages, et `fuseau_max` la longueur maximale d'un fuseau POSIX TZ, en entiers. `combinaisons` est la liste des combinaisons admises. `saisons_max` est le nombre maximal de saisons. `alertes.temperature` et `alertes.humidite` sont les intervalles admis des seuils d'alerte, bornes comprises ; `alertes.delais_s` et `alertes.delais_silence_s` sont les listes des délais admis, en secondes. Les intervalles de `ventilation` sont admis bornes comprises, en minutes ou en pour cent entiers ; `duree` vaut pour la ventilation de jour et de nuit, l'aération d'hibernation et l'option saturation ; une durée de ventilation doit rester strictement sous sa période. Aucune commande ne règle ces bornes.
+Les bornes publiées dans `state` sont celles de RG-reglages-bornes et de RG-reglage-des-alertes, lues des constantes de compilation du firmware : `"bornes":{"consigne":[min,max],"hysteresis":[min,max],"somme_max":…,"plages_max":…,"fuseau_max":…,"combinaisons":[…],"saisons_max":…,"ventilation":{"duree":[min,max],"periode":[min,max],"ecart":[min,max],"humidite":[min,max],"attente":[min,max],"pause":[min,max]},"substrat":{"coupure":[min,max],"reprise_min":…,"ecart_min":…,"delai":[min,max],"approche":[min,max],"comportements":[…]},"alertes":{"temperature":[min,max],"humidite":[min,max],"delais_s":[…],"delais_silence_s":[…]}}`. `consigne` et `hysteresis` sont les intervalles admis, bornes comprises, en °C à une décimale. Consigne plus hystérésis doit rester strictement sous `somme_max`. `plages_max` est le nombre maximal de plages, et `fuseau_max` la longueur maximale d'un fuseau POSIX TZ, en entiers. `combinaisons` est la liste des combinaisons admises. `saisons_max` est le nombre maximal de saisons. `alertes.temperature` et `alertes.humidite` sont les intervalles admis des seuils d'alerte, bornes comprises ; `alertes.delais_s` et `alertes.delais_silence_s` sont les listes des délais admis, en secondes. Les intervalles de `ventilation` sont admis bornes comprises, en minutes ou en pour cent entiers ; `duree` vaut pour la ventilation de jour et de nuit, l'aération d'hibernation et l'option saturation ; une durée de ventilation doit rester strictement sous sa période. Dans `substrat`, `coupure` est l'intervalle admis d'un seuil de coupure, en °C à une décimale, `reprise_min` le plus bas seuil de reprise, et `ecart_min` l'écart minimal entre la coupure et la reprise d'un même moment : la reprise doit rester au plus à `coupure − ecart_min`. `delai` est en minutes entières, `approche` en °C à une décimale. Aucune commande ne règle ces bornes.
 
 Chaque chauffe de la SHT45 (RG-chauffe-de-la-sht45) publie sur `event` : `{"evenement":"chauffe-sonde","sonde":"sht45","motif":…}`, où `motif` vaut `humidite-haute` ou `humidite-hors-plage`. Le message ne porte pas l'humidité qui l'a déclenchée : une valeur rejetée ne se publie jamais, et la mesure acceptée se lit déjà dans `state`. Une chauffe ne change rien à `state` : `air` et `sondes` y publient la mesure du dernier relevé, jamais celle que la sonde rend à la fin de la chauffe.
 
-Une commande retenue par le courtier n'est jamais appliquée : seule compte une commande publiée pendant que le régulateur est connecté. Le courtier remet les messages retenus juste après l'abonnement, et la bibliothèque PubSubClient ne dit pas si un message l'est. Toute commande reçue dans les 3 secondes qui suivent l'abonnement est donc ignorée, et l'ignorance signalée sur `event`. Toute commande reçoit sa réponse sur `event`. Une commande `sondes` refusée parce qu'elle ne laisserait aucune sonde intérieure l'est avec la raison `aucune sonde interieure`. Une commande `ventilation` hors bornes, mal formée, ou qui laisserait une durée au moins égale à sa période, l'est avec la raison `ventilation invalide` ; une commande `jour_nuit` hors bornes ou mal formée, avec la raison `jour_nuit invalide`.
+Chaque activation ou désactivation de la coupure par le substrat, par commande ou par la liaison série, publie sur `event` : `{"evenement":"securite-substrat","active":…}`. Elle s'ajoute à la réponse de la commande, pour qu'un abonné aux seuls événements la voie sans lire les réglages.
+
+Une commande retenue par le courtier n'est jamais appliquée : seule compte une commande publiée pendant que le régulateur est connecté. Le courtier remet les messages retenus juste après l'abonnement, et la bibliothèque PubSubClient ne dit pas si un message l'est. Toute commande reçue dans les 3 secondes qui suivent l'abonnement est donc ignorée, et l'ignorance signalée sur `event`. Toute commande reçoit sa réponse sur `event`. Une commande `sondes` refusée parce qu'elle ne laisserait aucune sonde intérieure l'est avec la raison `aucune sonde interieure`. Une commande `ventilation` hors bornes, mal formée, ou qui laisserait une durée au moins égale à sa période, l'est avec la raison `ventilation invalide` ; une commande `jour_nuit` hors bornes ou mal formée, avec la raison `jour_nuit invalide` ; une commande `securite_substrat` hors bornes, mal formée, ou qui laisserait une reprise à moins de `ecart_min` sous sa coupure, avec la raison `securite_substrat invalide`.
 
 Ce que la règle protège :
 
 - on lit l'état sans attendre la mesure suivante ;
-- une commande ancienne, oubliée sur le courtier, ne change pas le mode, la mise en sécurité, le rôle des sondes ni la ventilation à la reconnexion suivante ;
+- une commande ancienne, oubliée sur le courtier, ne change pas le mode, la mise en sécurité, le rôle des sondes, la ventilation ni la coupure par le substrat à la reconnexion suivante ;
 - lues dans le même message que les valeurs en place, les bornes ne peuvent pas appartenir à un autre firmware que celui qui les applique ;
 - une valeur rejetée, ou mesurée sur une sonde encore chaude, n'est jamais lue comme une mesure courante ;
 - la sonde qui décide, la cause d'un rejet et la mise en sécurité se lisent dans le même message que la mesure et le défaut qu'elles expliquent ;
 - les chauffes répétées de la SHT45 se lisent sans accès à la liaison série ;
 - les réglages de la ventilation, le moment de la journée et l'aération de saturation se lisent dans le même message que l'état du ventilateur qu'ils expliquent ;
+- les seuils de la coupure qui s'appliquent se lisent dans le même message que la mesure du substrat et la coupure qu'ils expliquent, sans que personne ne recalcule le moment de la journée ;
+- une coupure désactivée ne passe pas inaperçue ;
 - le réglage des alertes se lit au même endroit que ce qu'il surveille, et revient de lui-même après un redémarrage du courtier.
-
 ### RG-reglages-bornes
 
-La consigne et l'hystérésis du chauffage, utilisées en mode `ACTIF` et pendant les plages du mode `PLAGES`, les plages horaires du mode `PLAGES`, le fuseau horaire, le rôle de chaque sonde d'air, la combinaison des sondes intérieures, le jour et la nuit (RG-jour-et-nuit), et les réglages de la ventilation (RG-ventilation-periodique) sont réglables à distance et par la liaison série. Le réglage des alertes l'est à distance, dans les bornes de RG-reglage-des-alertes. Ils le sont dans des bornes fixées à la compilation, qu'aucune commande ni aucun réglage enregistré ne peut changer :
+La consigne et l'hystérésis du chauffage, utilisées en mode `ACTIF` et pendant les plages du mode `PLAGES`, les plages horaires du mode `PLAGES`, le fuseau horaire, le rôle de chaque sonde d'air, la combinaison des sondes intérieures, le jour et la nuit (RG-jour-et-nuit), les réglages de la ventilation (RG-ventilation-periodique), et la coupure de sécurité par le substrat (RG-coupure-par-le-substrat) — son activation, ses seuils de jour et de nuit, son approche et son comportement quand la sonde se tait — sont réglables à distance et par la liaison série. Le réglage des alertes l'est à distance, dans les bornes de RG-reglage-des-alertes. Ils le sont dans des bornes fixées à la compilation, qu'aucune commande ni aucun réglage enregistré ne peut changer :
 
 - consigne de 15 à 22 °C, hystérésis de 0,2 à 2 °C, et consigne plus hystérésis strictement sous 24 °C, le seuil d'alerte haute de l'air par défaut ;
 - de 0 à 4 plages, chacune conforme à RG-chauffage-par-plages ;
@@ -205,17 +214,18 @@ La consigne et l'hystérésis du chauffage, utilisées en mode `ACTIF` et pendan
 - pour la ventilation de jour et de nuit, le mode `metronome` ou `rubato`, une durée de 1 à 30 minutes et une période de 15 à 240 minutes, la durée strictement sous la période, et un écart de 10 à 50 % ;
 - pour l'aération d'hibernation, une heure `HH:MM` et une durée de 1 à 30 minutes ;
 - pour l'option saturation, le comportement `aeration` ou `continu`, une humidité de 80 à 100 % HR, une attente de 1 à 60 minutes, une durée de 1 à 30 minutes et une pause de 15 à 240 minutes ;
+- pour la coupure par le substrat, l'activation `true` ou `false` ; pour le jour et pour la nuit, un seuil de coupure de 20 à 28 °C et un seuil de reprise de 15 °C au seuil de coupure moins 2 °C, au dixième de degré ; pour la sonde muette, le comportement `reprise-air` ou `maintien`, et un délai de 1 à 30 minutes ; une approche de 0 à 4 °C, au dixième de degré ;
 - pour les alertes, les bornes de RG-reglage-des-alertes.
 
 Les durées, périodes, attentes et pauses sont en minutes entières, l'écart et l'humidité en pour cent entiers.
 
-Une commande dont une valeur sort de ces bornes, ou qui est mal formée, est refusée en entier, et rien n'en est appliqué. Cela vaut aussi pour une commande qui, appliquée, ne laisserait aucune sonde intérieure, ou laisserait une durée de ventilation qui n'est pas strictement sous sa période. Un réglage accepté s'applique à la mesure suivante et s'enregistre en mémoire non volatile.
+Une commande dont une valeur sort de ces bornes, ou qui est mal formée, est refusée en entier, et rien n'en est appliqué. Cela vaut aussi pour une commande qui, appliquée, ne laisserait aucune sonde intérieure, laisserait une durée de ventilation qui n'est pas strictement sous sa période, ou laisserait un seuil de reprise à moins de 2 °C sous son seuil de coupure. Un réglage accepté s'applique à la mesure suivante et s'enregistre en mémoire non volatile.
 
 Ne sont pas des réglages, et aucune commande ne les modifie :
 
 - le hors-gel de `HIBERNATION` (4-6 °C) ;
 - le plancher hors plage de `PLAGES` (12-14 °C) ;
-- les seuils de la coupure par le substrat (24 °C et 18,5 °C) ;
+- les bornes des seuils de la coupure par le substrat (20-28 °C, 15 °C, l'écart de 2 °C), le plancher de 4 °C qui lève une coupure maintenue, et la tranche de 10 minutes de l'approche (RG-coupure-par-le-substrat) ;
 - la durée maximale de chauffe continue ;
 - les plages de rejet d'une mesure et le délai de 2 minutes avant un défaut (RG-capteur-en-defaut) ;
 - l'écart minimal de 12 heures et le repli de 24 heures de l'aération d'hibernation (RG-ventilation-periodique) ;
@@ -225,10 +235,9 @@ Ne sont pas des réglages, et aucune commande ne les modifie :
 
 La mise en sécurité se désactive par commande, comme RG-capteur-en-defaut le prévoit, mais rien ne règle ce qu'elle fait quand elle est active.
 
-La borne de 24 °C sur la consigne ne suit pas le seuil haut d'alerte réglé : elle reste une constante de compilation. Ce que la règle protège : sans limiteur matériel en phase 1, une erreur de saisie ou un compte compromis ne peut pas porter l'air du bac au-delà de 24 °C par la consigne, ni lever la coupure par le substrat, ni laisser le régulateur sans sonde pour réguler, ni faire tourner le ventilateur sans arrêt ou jamais, même par l'option saturation ou par le hasard du mode `rubato`.
+La borne de 24 °C sur la consigne ne suit pas le seuil haut d'alerte réglé : elle reste une constante de compilation. Ce que la règle protège : sans limiteur matériel en phase 1, une erreur de saisie ou un compte compromis ne peut pas porter l'air du bac au-delà de 24 °C par la consigne, ni laisser le substrat monter au-delà de 28 °C tant que la coupure est active, ni désactiver la coupure sans que cela se voie — sa désactivation se publie, s'annonce sur `event` et s'historise —, ni faire osciller le chauffage autour du seuil du substrat, ni laisser le régulateur sans sonde pour réguler, ni faire tourner le ventilateur sans arrêt ou jamais, même par l'option saturation ou par le hasard du mode `rubato`.
 
 Sur la liaison série, `CONFIG` suivi d'un JSON règle exactement comme `cmd/config` (décision `05-reglage-par-la-liaison-serie`).
-
 ### RG-mode-au-demarrage
 
 Sont enregistrés en mémoire non volatile, à chaque changement :
@@ -239,11 +248,12 @@ Sont enregistrés en mémoire non volatile, à chaque changement :
 - le rôle de chaque sonde d'air et la combinaison des sondes intérieures ;
 - le jour et la nuit ;
 - les réglages de la ventilation : jour, nuit, hibernation et option saturation ;
+- les réglages de la coupure par le substrat : activation, seuils de jour et de nuit, approche, comportement sur sonde muette ;
 - le réglage des alertes.
 
 Au démarrage, le régulateur reprend le mode enregistré. S'il n'en trouve aucun de valide (premier démarrage, mémoire effacée ou corrompue), il démarre en `MAINTENANCE`, tout coupé, jusqu'à ce qu'on choisisse un mode.
 
-Il reprend chacun des réglages enregistrés — consigne et hystérésis ensemble, plages, fuseau, rôles et combinaison ensemble, jour et nuit, réglages de la ventilation ensemble, réglage des alertes — s'il respecte RG-reglages-bornes. Sinon, il prend celui du firmware :
+Il reprend chacun des réglages enregistrés — consigne et hystérésis ensemble, plages, fuseau, rôles et combinaison ensemble, jour et nuit, réglages de la ventilation ensemble, réglages de la coupure par le substrat ensemble, réglage des alertes — s'il respecte RG-reglages-bornes. Sinon, il prend celui du firmware :
 
 - 19 °C ± 0,5 pour la consigne et l'hystérésis ;
 - les plages `01:35-06:30` et `14:05-17:05` ;
@@ -251,9 +261,10 @@ Il reprend chacun des réglages enregistrés — consigne et hystérésis ensemb
 - `sht45` intérieure, `dht11` extérieure et la combinaison `priorite-sht45` ;
 - le mode `metronome` et le jour `08:00-21:00` ;
 - pour la ventilation de jour comme de nuit, le mode `metronome`, 5 minutes toutes les 60 minutes, un écart de 30 % ; l'aération d'hibernation à 13:00 pendant 5 minutes ; l'option saturation inactive, en `aeration`, à 95 % HR, 10 minutes d'attente, 5 minutes d'aération et 60 minutes de pause ;
+- la coupure par le substrat active, à 24 °C et 18,5 °C le jour comme la nuit, sans approche, avec le comportement `reprise-air` et un délai de 2 minutes : ce qu'elle faisait avant de devenir réglable ;
 - les valeurs par défaut de RG-reglage-des-alertes, toutes les alertes activées.
 
-Un réglage de ventilation enregistré sous la forme de 2026-013 (durée, période et heure seules) n'est pas repris : le régulateur prend celui du firmware, qui lui est égal par défaut. Le décompte des aérations, l'heure de la dernière et l'attente de l'option saturation ne sont pas enregistrés : ils repartent du démarrage (RG-ventilation-periodique). Les autres seuils restent ceux du firmware jusqu'à ce qu'ils deviennent réglables.
+Un réglage de ventilation enregistré sous la forme de 2026-013 (durée, période et heure seules) n'est pas repris : le régulateur prend celui du firmware, qui lui est égal par défaut. Le décompte des aérations, l'heure de la dernière et l'attente de l'option saturation ne sont pas enregistrés : ils repartent du démarrage (RG-ventilation-periodique). Une coupure par le substrat en cours n'est pas enregistrée (RG-coupure-par-le-substrat). Les autres seuils restent ceux du firmware jusqu'à ce qu'ils deviennent réglables.
 
 Ce que la règle protège :
 
@@ -262,8 +273,8 @@ Ce que la règle protège :
 - un réglage enregistré par un firmware plus ancien, aux bornes plus larges, n'échappe pas aux bornes du firmware courant ;
 - des rôles illisibles ne laissent pas le régulateur sans sonde intérieure ;
 - un réglage de ventilation illisible ne laisse pas le bac sans aération ;
+- un réglage de la coupure illisible remet la coupure active, sur ses seuils d'origine, plutôt que de la laisser désactivée ;
 - un réglage d'alertes illisible ne fait taire aucune alerte : elles repartent toutes activées.
-
 ### RG-capteur-en-defaut
 
 Une mesure d'une sonde d'air est rejetée quand la sonde ne répond pas (muette), ou quand elle est impossible dans le terrarium : température hors de −20 à 60 °C, ou humidité relative hors de 0 à 100 %, bornes comprises, une valeur non numérique comptant comme hors plage. Température et humidité venant du même composant (ADR-capteur-air-sht45), une mesure rejetée l'est entière. La cause d'un rejet se dit par l'une de ces valeurs, la première qui s'applique : `muet`, `temperature-hors-plage`, `humidite-hors-plage`. Les mêmes plages valent pour les deux sondes : elles écartent ce qu'aucun terrarium ne peut connaître, non ce qu'un composant ne sait pas mesurer.
