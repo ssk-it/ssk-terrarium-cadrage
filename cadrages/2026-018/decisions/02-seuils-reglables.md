@@ -34,4 +34,4 @@ Coupure de 20 à 28 °C, reprise de 15 à 26 °C, indépendamment.
 
 ## Décision
 
-`bornes-compilees-ecart-2`. Ce qui a tranché : garder des deux décisions de 2026-005 ce qui les motivait — pas de substrat trop chaud, pas d'oscillation — en le faisant porter par des bornes plutôt que par une constante. Les valeurs, 28 °C et 2 °C, sont des propositions à confirmer (Questions ouvertes du cadrage).
+`bornes-compilees-ecart-2`. Ce qui a tranché : garder des deux décisions de 2026-005 ce qui les motivait — pas de substrat trop chaud, pas d'oscillation — en le faisant porter par des bornes plutôt que par une constante. Les valeurs, 28 °C et 2 °C, ont été confirmées par le propriétaire le 13 novembre 2026, avant le développement.

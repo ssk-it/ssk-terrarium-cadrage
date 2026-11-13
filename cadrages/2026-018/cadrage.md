@@ -10,6 +10,7 @@ liens:
   - { tag: issue_github, nom: 'ssk-terrarium#38', url: 'https://github.com/sskorupski/ssk-terrarium/issues/38' }
   - { tag: issue_github, nom: 'ssk-it-infra#56', url: 'https://github.com/ssk-it/ssk-it-infra/issues/56' }
   - { tag: pull_request, nom: 'ssk-terrarium#39', url: 'https://github.com/sskorupski/ssk-terrarium/pull/39' }
+  - { tag: pull_request, nom: 'ssk-it-infra#57', url: 'https://github.com/ssk-it/ssk-it-infra/pull/57' }
 impacts:
   - { regle: RG-coupure-par-le-substrat, operation: modifie }
   - { regle: RG-reglages-bornes, operation: modifie }
