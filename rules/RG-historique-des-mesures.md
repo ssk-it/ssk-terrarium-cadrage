@@ -3,7 +3,7 @@ id: RG-historique-des-mesures
 fonctionnalites: [historique, mesures]
 statut: actif
 cree_par: 2026-014
-modifie_par: [2026-017]
+modifie_par: [2026-017, 2026-018]
 ---
 
 L'état que chaque régulateur publie sur `state` (RG-topics-mqtt) est historisé sur le cluster ssk-it-01, et gardé cinq ans. Au-delà, ses points s'effacent.
@@ -16,6 +16,9 @@ Telegraf lit l'état sous le compte `historique`, qui ne peut rien commander (RG
 - la consigne et l'hystérésis ;
 - la consigne de ventilation, `terrarium_consigne_ventilation{id}` : la part du temps d'aération que prévoit le rythme en place (RG-ventilation-periodique), de 0 à 1, calculée à chaque état reçu — `ventilation.<moment>.duree / ventilation.<moment>.periode` en `ACTIF` et en `PLAGES`, selon le `moment`, `jour` ou `nuit` ; `ventilation.hibernation.duree / 1440` en `HIBERNATION` ; 0 en `MAINTENANCE`. Le mode d'un rythme, métronome ou rubato, n'y change rien : le rubato aère en moyenne comme le métronome. L'option saturation n'y entre pas : c'est l'écart à cette consigne qui la montre. Aucun point quand `ventilation` manque, qu'un de ces champs manque ou n'est pas un nombre, que la période vaut 0, ou que le mode ou le moment est inconnu ;
 - le défaut capteur, la pause de chauffe, l'heure connue et la plage en cours, à 1 ou 0 ;
+- la coupure par le substrat, `terrarium_coupure_substrat{id}`, à 1 quand elle coupe le chauffage et à 0 sinon, et son activation, `terrarium_securite_substrat_active{id}`, à 1 ou 0 ;
+- les seuils de coupure et de reprise qui s'appliquent, tels que l'état les publie dans `seuils_substrat`, `terrarium_substrat_coupure{id}` et `terrarium_substrat_reprise{id}`, en °C. Aucun point quand la coupure est désactivée : `seuils_substrat` vaut alors `null` ;
+- la part de chauffe que permet l'approche, `terrarium_part_substrat{id}`, de 0 à 1, telle que l'état la publie dans `part_substrat` ; aucun point quand elle vaut `null` ;
 - le temps depuis le démarrage ;
 - et ce que les alertes demandent en plus ([ssk-terrarium-cadrage#2026-009](https://ssk-canon.s3-website.fr-par.scw.cloud/ssk-it/ssk-terrarium-cadrage/cadrages/2026-009)).
 
@@ -31,5 +34,6 @@ Ce que la règle protège :
 - une sonde qui décroche chaque nuit se voit dans l'historique, avant de se voir dans l'élevage ;
 - la température du garage, que mesure la sonde extérieure, se garde avec celle du bac ;
 - on voit si le ventilateur a tourné plus que son rythme ne le prévoyait, et quand ;
+- on voit quand le substrat a coupé le chauffage, sous quels seuils, et depuis quand la coupure était désactivée ;
 - un trou reste un trou : personne ne lit une température que rien n'a mesurée ;
 - la base qui garde cinq ans de mesures n'est pas une entrée de plus offerte aux scanners.
