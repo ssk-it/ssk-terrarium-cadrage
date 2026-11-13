@@ -44,6 +44,10 @@ En mode `ACTIF`, le bac est tenu à la même consigne jour et nuit, 19 °C par d
 4. En `PLAGES`, rien ne change : en plage, la consigne de jour ; hors plage, le plancher.
 5. Sans heure, c'est le jour (RG-jour-et-nuit) : le chauffage vise la consigne de jour.
 
+### Reprise de 2026-018
+
+[ssk-terrarium-cadrage#2026-018](https://ssk-canon.s3-website.fr-par.scw.cloud/ssk-it/ssk-terrarium-cadrage/cadrages/2026-018), livré le 13 novembre 2026, a réécrit RG-reglages-bornes, RG-mode-au-demarrage et RG-topics-mqtt pour rendre réglable la coupure par le substrat. Les énoncés ci-dessous partent de ce texte livré et y ajoutent la consigne et l'hystérésis de nuit, pour que la fusion de ce cadrage n'efface pas les réglages de la coupure. Le firmware (sskorupski/ssk-terrarium#39) porte déjà les deux.
+
 ## Énoncés
 
 ### RG-chauffage-par-hysteresis
