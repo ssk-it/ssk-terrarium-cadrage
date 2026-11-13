@@ -10,6 +10,7 @@ liens:
   - { tag: pull_request, nom: 'ssk-terrarium-cadrage#54', url: 'https://github.com/ssk-it/ssk-terrarium-cadrage/pull/54' }
   - { tag: issue_github, nom: 'ssk-terrarium#40', url: 'https://github.com/sskorupski/ssk-terrarium/issues/40' }
   - { tag: issue_github, nom: 'ssk-it-infra#58', url: 'https://github.com/ssk-it/ssk-it-infra/issues/58' }
+  - { tag: pull_request, nom: 'ssk-it-infra#59', url: 'https://github.com/ssk-it/ssk-it-infra/pull/59' }
 impacts:
   - { regle: RG-sorties-par-mode, operation: modifie }
   - { regle: RG-coupure-par-le-substrat, operation: modifie }
