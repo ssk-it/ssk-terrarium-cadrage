@@ -3,7 +3,7 @@ id: RG-mode-au-demarrage
 fonctionnalites: [modes, protections]
 statut: actif
 cree_par: 2026-001
-modifie_par: [2026-002, 2026-003, 2026-007, 2026-013, 2026-015]
+modifie_par: [2026-002, 2026-003, 2026-007, 2026-013, 2026-015, 2026-018]
 ---
 
 Sont enregistrés en mémoire non volatile, à chaque changement :
@@ -13,20 +13,22 @@ Sont enregistrés en mémoire non volatile, à chaque changement :
 - les plages horaires et le fuseau ;
 - le rôle de chaque sonde d'air et la combinaison des sondes intérieures ;
 - le jour et la nuit ;
-- les réglages de la ventilation : jour, nuit, hibernation et option saturation.
+- les réglages de la ventilation : jour, nuit, hibernation et option saturation ;
+- les réglages de la coupure par le substrat : activation, seuils de jour et de nuit, approche, comportement sur sonde muette.
 
 Au démarrage, le régulateur reprend le mode enregistré. S'il n'en trouve aucun de valide (premier démarrage, mémoire effacée ou corrompue), il démarre en `MAINTENANCE`, tout coupé, jusqu'à ce qu'on choisisse un mode.
 
-Il reprend chacun des réglages enregistrés — consigne et hystérésis ensemble, plages, fuseau, rôles et combinaison ensemble, jour et nuit, réglages de la ventilation ensemble — s'il respecte RG-reglages-bornes. Sinon, il prend celui du firmware :
+Il reprend chacun des réglages enregistrés — consigne et hystérésis ensemble, plages, fuseau, rôles et combinaison ensemble, jour et nuit, réglages de la ventilation ensemble, réglages de la coupure par le substrat ensemble — s'il respecte RG-reglages-bornes. Sinon, il prend celui du firmware :
 
 - 19 °C ± 0,5 pour la consigne et l'hystérésis ;
 - les plages `01:35-06:30` et `14:05-17:05` ;
 - le fuseau de Paris ;
 - `sht45` intérieure, `dht11` extérieure et la combinaison `priorite-sht45` ;
 - le mode `metronome` et le jour `08:00-21:00` ;
-- pour la ventilation de jour comme de nuit, le mode `metronome`, 5 minutes toutes les 60 minutes, un écart de 30 % ; l'aération d'hibernation à 13:00 pendant 5 minutes ; l'option saturation inactive, en `aeration`, à 95 % HR, 10 minutes d'attente, 5 minutes d'aération et 60 minutes de pause.
+- pour la ventilation de jour comme de nuit, le mode `metronome`, 5 minutes toutes les 60 minutes, un écart de 30 % ; l'aération d'hibernation à 13:00 pendant 5 minutes ; l'option saturation inactive, en `aeration`, à 95 % HR, 10 minutes d'attente, 5 minutes d'aération et 60 minutes de pause ;
+- la coupure par le substrat active, à 24 °C et 18,5 °C le jour comme la nuit, sans approche, avec le comportement `reprise-air` et un délai de 2 minutes : ce qu'elle faisait avant de devenir réglable.
 
-Un réglage de ventilation enregistré sous la forme de 2026-013 (durée, période et heure seules) n'est pas repris : le régulateur prend celui du firmware, qui lui est égal par défaut. Le décompte des aérations, l'heure de la dernière et l'attente de l'option saturation ne sont pas enregistrés : ils repartent du démarrage (RG-ventilation-periodique). Les autres seuils restent ceux du firmware jusqu'à ce qu'ils deviennent réglables.
+Un réglage de ventilation enregistré sous la forme de 2026-013 (durée, période et heure seules) n'est pas repris : le régulateur prend celui du firmware, qui lui est égal par défaut. Le décompte des aérations, l'heure de la dernière et l'attente de l'option saturation ne sont pas enregistrés : ils repartent du démarrage (RG-ventilation-periodique). Une coupure par le substrat en cours n'est pas enregistrée (RG-coupure-par-le-substrat). Les autres seuils restent ceux du firmware jusqu'à ce qu'ils deviennent réglables.
 
 Ce que la règle protège :
 
@@ -34,4 +36,5 @@ Ce que la règle protège :
 - un régulateur qui ne sait pas où il en est ne chauffe pas au hasard ;
 - un réglage enregistré par un firmware plus ancien, aux bornes plus larges, n'échappe pas aux bornes du firmware courant ;
 - des rôles illisibles ne laissent pas le régulateur sans sonde intérieure ;
-- un réglage de ventilation illisible ne laisse pas le bac sans aération.
+- un réglage de ventilation illisible ne laisse pas le bac sans aération ;
+- un réglage de la coupure illisible remet la coupure active, sur ses seuils d'origine, plutôt que de la laisser désactivée.

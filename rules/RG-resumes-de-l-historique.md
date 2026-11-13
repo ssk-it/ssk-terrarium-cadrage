@@ -3,7 +3,7 @@ id: RG-resumes-de-l-historique
 fonctionnalites: [historique, mqtt]
 statut: actif
 cree_par: 2026-014
-modifie_par: [2026-017]
+modifie_par: [2026-017, 2026-018]
 ---
 
 Toutes les 5 minutes, la supervision publie sur le courtier les résumés de chaque régulateur dont l'historique garde un état dans les 365 derniers jours. Il y a un résumé par période, retenu, sur `ssk-terrarium/<id>/historique/<periode>`. Les quatre périodes sont publiées, même vides, pour chaque régulateur qui a un état dans une journée close de l'année. Un régulateur tout neuf n'a d'abord que les périodes dont une fenêtre est close, et son résumé `1an` arrive après sa première journée close.
@@ -21,7 +21,10 @@ Un résumé est un objet JSON. Ses champs :
 - `etats`, le nombre d'états reçus dans chaque fenêtre ;
 - `air.temperature`, `air.humidite`, `substrat.temperature`, `consigne`, et `sondes.<nom>.temperature` et `sondes.<nom>.humidite` pour chaque sonde, chacun sous la forme `{"moy":[…],"min":[…],"max":[…],"n":[…]}` ;
 - `sorties.chauffage`, `sorties.eclairage`, `sorties.pompe` et `sorties.ventilateur`, chacun un tableau ;
-- `consigne_ventilation`, la part du temps d'aération que prévoit le rythme de ventilation en place (RG-historique-des-mesures), sous la même forme que `consigne`.
+- `consigne_ventilation`, la part du temps d'aération que prévoit le rythme de ventilation en place (RG-historique-des-mesures), sous la même forme que `consigne` ;
+- `coupure_substrat`, un tableau, sous la même forme qu'une sortie : la part des états reçus où la coupure par le substrat coupait le chauffage ;
+- `seuils_substrat.coupure` et `seuils_substrat.reprise`, les seuils qui s'appliquaient, sous la même forme que `consigne`. Une fenêtre où la coupure était désactivée de bout en bout vaut `null`, avec 0 dans `n` : rien ne s'appliquait ;
+- `part_substrat`, la part de chauffe que permettait l'approche, sous la même forme que `consigne`.
 
 Un exemple, réduit ici à quatre fenêtres et à deux champs :
 
@@ -46,12 +49,12 @@ Dans chaque fenêtre :
 
 - `etats` compte les états reçus du régulateur. Un état arrive toutes les 30 s : une fenêtre de 5 minutes en attend 10 ;
 - une mesure a sa moyenne (`moy`), son minimum, son maximum et le nombre de mesures acceptées (`n`). Une fenêtre sans aucune mesure acceptée vaut `null` dans les trois premiers, et 0 dans `n`. Elle ne vaut jamais 0, ni la valeur d'une fenêtre voisine. Une fenêtre où une partie des mesures manque résume celles qui existent, et `n` dit combien ;
-- une sortie vaut la part des états reçus où elle était allumée, de 0 à 1, et `null` quand aucun état n'est reçu ;
+- une sortie vaut la part des états reçus où elle était allumée, de 0 à 1, et `null` quand aucun état n'est reçu ; `coupure_substrat` aussi ;
 - `consigne_ventilation` vaut, en moyenne, la part prévue sur les états de la fenêtre : une fenêtre qui passe du jour à la nuit pondère les deux rythmes.
 
-Les mesures s'arrondissent au centième. Les parts — sorties et `consigne_ventilation` — s'arrondissent au millième : la part prévue se compare à celle du ventilateur, et au centième, 2 minutes par heure vaudraient 0,03 quand le ventilateur en fait 0,033, un écart qui n'existe pas.
+Les mesures s'arrondissent au centième. Les parts — sorties, `coupure_substrat`, `part_substrat` et `consigne_ventilation` — s'arrondissent au millième : la part prévue se compare à celle du ventilateur, et au centième, 2 minutes par heure vaudraient 0,03 quand le ventilateur en fait 0,033, un écart qui n'existe pas.
 
-Une série que le régulateur ne publie pas est absente du résumé, et non remplie de `null`. C'est le cas d'un substrat sans sonde, des sondes d'un firmware qui ne publie pas `sondes`, ou de `consigne_ventilation` pour un firmware qui ne publie pas `ventilation` sous la forme de RG-topics-mqtt. Elle n'a pas de valeurs antérieures à sa mise en service : ses premières fenêtres valent `null`. Les noms des sondes sont ceux de l'historique (RG-historique-des-mesures).
+Une série que le régulateur ne publie pas est absente du résumé, et non remplie de `null`. C'est le cas d'un substrat sans sonde, des sondes d'un firmware qui ne publie pas `sondes`, de `consigne_ventilation` pour un firmware qui ne publie pas `ventilation` sous la forme de RG-topics-mqtt, ou de `seuils_substrat` pour un firmware qui ne le publie pas. `coupure_substrat` est publié par tous les firmwares depuis 2026-005 : le champ existe avant ce cadrage, mais sa série n'entre dans l'historique qu'avec lui. Elle n'a pas de valeurs antérieures à sa mise en service : ses premières fenêtres valent `null`. Les noms des sondes sont ceux de l'historique (RG-historique-des-mesures).
 
 Un résumé est republié toutes les 5 minutes, même inchangé : son `calcule_le` dit que la supervision vit. Le courtier, sans volume, le perd à son redémarrage, et il revient à la publication suivante. Un résumé pèse de 50 à 70 Ko, avec deux sondes.
 
@@ -64,4 +67,5 @@ Ce que la règle protège :
 - un silence du régulateur se distingue d'un rejet de mesure ;
 - une nuit froide ne disparaît pas dans la moyenne d'un mois, puisque chaque fenêtre garde son minimum et son maximum ;
 - un résumé ancien se reconnaît à l'heure de son calcul ;
-- ce que le ventilateur a fait se lit en regard de ce que son rythme prévoyait, sans que l'application recopie la règle du régulateur.
+- ce que le ventilateur a fait se lit en regard de ce que son rythme prévoyait, sans que l'application recopie la règle du régulateur ;
+- une chauffe absente se lit comme une coupure par le substrat, et non comme une panne, et les seuils se lisent à côté de la température du substrat qu'ils jugent.
