@@ -6,6 +6,9 @@ liens:
   - { tag: document, nom: 'ssk-terrarium-cadrage#2026-005', url: 'https://ssk-canon.s3-website.fr-par.scw.cloud/ssk-it/ssk-terrarium-cadrage/cadrages/2026-005' }
   - { tag: document, nom: 'ssk-terrarium-cadrage#2026-016', url: 'https://ssk-canon.s3-website.fr-par.scw.cloud/ssk-it/ssk-terrarium-cadrage/cadrages/2026-016' }
   - { tag: document, nom: 'ssk-terrarium-cadrage#2026-017', url: 'https://ssk-canon.s3-website.fr-par.scw.cloud/ssk-it/ssk-terrarium-cadrage/cadrages/2026-017' }
+  - { tag: pull_request, nom: 'ssk-terrarium-cadrage#52', url: 'https://github.com/ssk-it/ssk-terrarium-cadrage/pull/52' }
+  - { tag: issue_github, nom: 'ssk-terrarium#38', url: 'https://github.com/sskorupski/ssk-terrarium/issues/38' }
+  - { tag: issue_github, nom: 'ssk-it-infra#56', url: 'https://github.com/ssk-it/ssk-it-infra/issues/56' }
 impacts:
   - { regle: RG-coupure-par-le-substrat, operation: modifie }
   - { regle: RG-reglages-bornes, operation: modifie }
